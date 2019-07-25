@@ -1,8 +1,6 @@
-Replace all `ToDo` notes with the appropriate names, descriptions and commands.
-
 # Open Data Hub - Web Components Pagebuilder
 
-ToDo: Description of the project.
+`TODO`: Description of the project.
 
 ## Table of contents
 
@@ -21,7 +19,6 @@ on your local machine for development and testing purposes.
 
 To build the project, the following prerequisites must be met:
 
-- ToDo: Check the prerequisites
 - Java JDK 1.8 or higher (e.g. [OpenJDK](https://openjdk.java.net/))
 - [Maven](https://maven.apache.org/) 3.x
 
@@ -41,15 +38,23 @@ Change directory:
 cd odh-web-components-pagebuilder/
 ```
 
-### Build
+### Running
 
-Build the project:
+Build and run the project [locally](http://0.0.0.0:8080) (http://0.0.0.0:8080):
 
 ```bash
-mvn clean install
+mvn spring-boot:run
 ```
 
-## Running tests
+### Packaging
+
+Build and package the application as a JAR file (located in the target folder) for production use:
+
+```bash
+mvn clean package -Pproduction-mode
+```
+
+## Testing
 
 The unit tests can be executed with the following command:
 
@@ -59,7 +64,11 @@ mvn clean test
 
 ## Deployment
 
-ToDo: A detailed description about how the application must be deployed.
+The application can be deployed by running the packaged runnable file on the specified port (or 8080 in case of missing parameter), like so:
+
+```bash
+java -jar -Dserver.port=80 path/to/odh-web-components-pagebuilder-[VERSION].jar
+```
 
 ## Docker environment
 
