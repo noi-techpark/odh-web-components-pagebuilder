@@ -245,6 +245,9 @@
 
         <profile>
             <id>integration-tests</id>
+            <properties>
+                <packaging.type>jar</packaging.type>
+            </properties>
             <build>
                 <plugins>
                     <plugin>
