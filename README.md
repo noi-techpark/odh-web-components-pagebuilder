@@ -4,8 +4,8 @@
 
 ## Table of contents
 
-- [Gettings started](#getting-started)
-- [Running tests](#running-tests)
+- [Getting started](#getting-started)
+- [Testing](#testing)
 - [Deployment](#deployment)
 - [Docker environment](#docker-environment)
 - [Information](#information)
@@ -36,6 +36,52 @@ Change directory:
 
 ```bash
 cd odh-web-components-pagebuilder/
+```
+
+### Configuration
+
+The application needs a couple of environment/deployment specific configurations and components in order to run correctly. These can be configured in form of Spring beans and can be defined in the project using a separate annotation-based configuration (in a source file that will be detected by the application context), like the following
+
+```java
+@Configuration
+public class LocalConfiguration {
+
+    @Bean(destroyMethod = "close")
+    public DataSource dataSource(Environment env) {
+        HikariConfig config = new HikariConfig();
+        config.setJdbcUrl("jdbc:postgresql://localhost:5432/pagebuilder");
+        config.setUsername("pagebuilder");
+        config.setPassword("s3cret");
+        return new HikariDataSource(config);
+    }
+    
+    @Bean
+    public DomainsProvider domains() {
+        DefaultDomainsProvider provider = new DefaultDomainsProvider();
+        
+        // TODO define available domains (hostname + allow subdomains)
+        provider.add("opendatahub.bz.it", false);
+        
+        return provider;
+    }
+    
+    @Bean
+    public PageComponentsProvider components() {
+        PageComponentsDefaultProvider provider = new PageComponentsDefaultProvider();
+
+        // TODO define available components
+        provider.add(
+            "Example Component",
+            "This is just an example component.",
+            "https://example.com/webcomps/dist/example.min.js",
+            "example-webcomp",
+            "<example-webcomp title="..." background="..."></example-webcomp>"
+        );
+        
+        return provider;
+    }
+
+}
 ```
 
 ### Running
