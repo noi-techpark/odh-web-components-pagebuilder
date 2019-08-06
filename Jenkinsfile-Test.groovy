@@ -89,7 +89,7 @@ public class LocalConfiguration {
         }
         stage('Test') {
             steps {
-                sh 'mvn -B -U clean test verify -P it'
+                sh 'mvn -B -U clean test verify -Pintegration-tests'
             }
         }
         stage('Build') {
