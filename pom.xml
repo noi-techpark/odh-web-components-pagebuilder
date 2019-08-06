@@ -239,6 +239,9 @@
 
         <profile>
             <id>integration-tests</id>
+            <properties>
+                <packaging.type>war</packaging.type>
+            </properties>
             <build>
                 <plugins>
                     <plugin>
