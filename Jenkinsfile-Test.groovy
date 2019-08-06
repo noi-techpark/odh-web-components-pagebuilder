@@ -66,7 +66,7 @@ public class LocalConfiguration {
 
 		provider.add("Beacons Map/Table", "Show all the beacons in South Tyrol as a map or table.",
 				"https://danielrampanelli.com/webcomps/beacons-map-table.min.js", "beacons-map-table",
-				"<beacons-map-table view=\"all\" search></beacons-map-table>");
+				"<beacons-map-table view=\\"all\\" search></beacons-map-table>");
 
 		return provider;
 	}
