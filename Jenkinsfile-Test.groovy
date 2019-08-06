@@ -10,6 +10,10 @@ pipeline {
         TESTSERVER_TOMCAT_ENDPOINT = "http://pagebuilder.tomcat02.testingmachine.eu:8080/manager/text"
         TESTSERVER_TOMCAT_CREDENTIALS = credentials('testserver-tomcat8-credentials')
 
+        PAGEBUILDER_POSTGRES_URL = "jdbc:postgresql://test-pg-bdp.co90ybcr8iim.eu-west-1.rds.amazonaws.com:5432/webcompbuilder"
+        PAGEBUILDER_POSTGRES_USERNAME = credentials('pagebuilder-test-postgres-username')
+        PAGEBUILDER_POSTGRES_PASSWORD = credentials('pagebuilder-test-postgres-password')
+
         LOCAL_CONFIGURATION = """
 package it.bz.opendatahub.webcomponentspagebuilder;
 
@@ -27,20 +31,18 @@ import it.bz.opendatahub.webcomponentspagebuilder.data.DomainsProvider;
 import it.bz.opendatahub.webcomponentspagebuilder.data.PageComponentsDefaultProvider;
 import it.bz.opendatahub.webcomponentspagebuilder.data.PageComponentsProvider;
 
-/**
- * Local configuration of available components
- */
 @Configuration
 public class LocalConfiguration {
 
-	@Bean(destroyMethod = "close")
-	public DataSource dataSource(Environment env) {
-		HikariConfig config = new HikariConfig();
-		config.setDriverClassName("org.h2.Driver");
-		config.setJdbcUrl("jdbc:h2:/path/to/pagebuilder-database-file");
-		return new HikariDataSource(config);
-	}
-
+    @Bean(destroyMethod = "close")
+    public DataSource dataSource(Environment env) {
+        HikariConfig config = new HikariConfig();
+        config.setJdbcUrl("${PAGEBUILDER_POSTGRES_URL}");
+        config.setUsername("${PAGEBUILDER_POSTGRES_USERNAME}");
+        config.setPassword("${PAGEBUILDER_POSTGRES_PASSWORD}");
+        return new HikariDataSource(config);
+    }
+    
 	@Bean
 	public DomainsProvider domains() {
 		DefaultDomainsProvider provider = new DefaultDomainsProvider();
@@ -48,7 +50,7 @@ public class LocalConfiguration {
 		provider.add("opendatahub.bz.it", false);
 		return provider;
 	}
-
+    
 	@Bean
 	public PageComponentsProvider components() {
 		PageComponentsDefaultProvider provider = new PageComponentsDefaultProvider();
