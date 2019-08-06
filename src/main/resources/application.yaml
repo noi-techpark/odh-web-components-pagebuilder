@@ -8,3 +8,9 @@ spring:
     servlet:
         multipart:
             enabled: false
+    jpa:
+        properties:
+            hibernate:
+                jdbc:
+                    lob:
+                        non_contextual_creation: true
