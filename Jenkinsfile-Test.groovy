@@ -13,9 +13,17 @@ pipeline {
         LOCAL_CONFIGURATION = """
 package it.bz.opendatahub.webcomponentspagebuilder;
 
+import javax.sql.DataSource;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.env.Environment;
 
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
+
+import it.bz.opendatahub.webcomponentspagebuilder.data.DefaultDomainsProvider;
+import it.bz.opendatahub.webcomponentspagebuilder.data.DomainsProvider;
 import it.bz.opendatahub.webcomponentspagebuilder.data.PageComponentsDefaultProvider;
 import it.bz.opendatahub.webcomponentspagebuilder.data.PageComponentsProvider;
 
@@ -24,6 +32,22 @@ import it.bz.opendatahub.webcomponentspagebuilder.data.PageComponentsProvider;
  */
 @Configuration
 public class LocalConfiguration {
+
+	@Bean(destroyMethod = "close")
+	public DataSource dataSource(Environment env) {
+		HikariConfig config = new HikariConfig();
+		config.setDriverClassName("org.h2.Driver");
+		config.setJdbcUrl("jdbc:h2:/path/to/pagebuilder-database-file");
+		return new HikariDataSource(config);
+	}
+
+	@Bean
+	public DomainsProvider domains() {
+		DefaultDomainsProvider provider = new DefaultDomainsProvider();
+		provider.add("suedtirol.info", true);
+		provider.add("opendatahub.bz.it", false);
+		return provider;
+	}
 
 	@Bean
 	public PageComponentsProvider components() {
@@ -42,7 +66,7 @@ public class LocalConfiguration {
 
 		provider.add("Beacons Map/Table", "Show all the beacons in South Tyrol as a map or table.",
 				"https://danielrampanelli.com/webcomps/beacons-map-table.min.js", "beacons-map-table",
-				"<beacons-map-table view=\\"all\\" search></beacons-map-table>");
+				"<beacons-map-table view=\"all\" search></beacons-map-table>");
 
 		return provider;
 	}
@@ -70,12 +94,12 @@ public class LocalConfiguration {
         }
         stage('Build') {
             steps {
-                sh 'mvn -B -U clean install package'
+                sh 'mvn -B -U clean install package -Pproduction-war'
             }
         }
         stage('Deploy') {
             steps{
-                sh 'mvn -B -U tomcat:redeploy -Dmaven.tomcat.url=${TESTSERVER_TOMCAT_ENDPOINT} -Dmaven.tomcat.server=testServer'
+                sh 'mvn -B -U -Pproduction-war tomcat:redeploy -Dmaven.tomcat.url=${TESTSERVER_TOMCAT_ENDPOINT} -Dmaven.tomcat.server=testServer'
             }
         }
     }
