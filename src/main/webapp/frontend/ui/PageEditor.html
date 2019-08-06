@@ -1,0 +1,455 @@
+<dom-module id="pagebuilder-page-editor">
+    <template>
+		<style>
+			iframe {
+				border: 0;
+				height: 100%;
+				width: 100%;
+			}
+		</style>
+        <iframe id="frame" frameborder="0"></iframe>
+    </template>
+    <script>
+        class PageEditor extends Polymer.Element {
+            static get is() {
+                return 'pagebuilder-page-editor';
+            }
+            
+            scrollTo(element, to, duration) {
+            	var easeInOutQuad = function(t, b, c, d) {
+            	    t /= d/2;
+            	    if (t < 1) return c/2*t*t + b;
+            	    t--;
+                    return -c/2 * (t*(t-2) - 1) + b;
+        		};
+            	
+                var start = element.scrollTop,
+                    change = to - start,
+                    currentTime = 0,
+                    increment = 20;
+                
+                var animateScroll = function() {        
+                    currentTime += increment;
+                    
+                    var val = easeInOutQuad(currentTime, start, change, duration);
+                    element.scrollTop = val;
+                    
+                    if (currentTime < duration) {
+                        setTimeout(animateScroll, increment);
+                    }
+                };
+                
+                animateScroll();
+            }
+            
+            ensureVisible(pageContent) {
+            	var self = this;
+            	
+            	var frame = this.shadowRoot.querySelector('iframe');
+            	var element = frame.contentWindow.document.body;
+            	
+            	console.log('Scroll Top', element.scrollTop);
+            	console.log('Frame Height', frame.clientHeight);
+            	console.log('Content Height', pageContent.clientHeight);
+            	
+            	if (pageContent.clientHeight < frame.clientHeight) {
+            		if ((element.scrollTop + frame.clientHeight) < (pageContent.offsetTop + pageContent.clientHeight)) {
+            			self.scrollTo(element, element.scrollTop + (frame.clientHeight - pageContent.clientHeight) + 32, 1000);
+            		} else if (element.scrollTop > pageContent.offsetTop) {
+            			self.scrollTo(element, pageContent.scrollTop - 32, 1000);
+            		}
+            	} else {
+            		self.scrollTo(element, pageContent.offsetTop - 32, 1000);
+            	}
+           	}
+            
+            injectControls(document, pageContent) {
+            	var self = this;
+            	
+            	var uuid = pageContent.getAttribute('id');
+            	
+            	var overlay = pageContent.querySelector('.odh-page-content-overlay');
+            	if (!!overlay) {
+            		overlay.parentNode.removeChild(overlay)
+            	}
+            	
+            	overlay = document.createElement('div');
+                overlay.classList.add('odh-page-content-overlay');
+                
+                pageContent.appendChild(overlay);
+            	
+            	var icon;
+            	
+            	var editButton = document.createElement('button');
+            	editButton.setAttribute('title', 'EDIT/CONFIGURE');
+            	editButton.classList.add('odh-page-content-action');
+            	editButton.classList.add('edit');
+            	
+            	icon = document.createElement('img');
+                icon.setAttribute('src', '/frontend/images/edit.svg');
+                
+                editButton.appendChild(icon);
+            	
+            	editButton.onclick = function(e) {
+            		self.$server.editContent(uuid);
+            	};
+            	
+            	var moveButton = document.createElement('button');
+            	moveButton.setAttribute('title', 'MOVE');
+            	moveButton.setAttribute('draggable', 'true');
+            	moveButton.classList.add('odh-page-content-action');
+            	moveButton.classList.add('move');
+            	
+            	icon = document.createElement('img');
+                icon.setAttribute('src', '/frontend/images/move.svg');
+                
+                moveButton.appendChild(icon);
+                
+                moveButton.onmousedown = function(e) {
+                	pageContent.classList.add('is-being-moved');
+                };
+                
+                moveButton.ondragstart = function(e) {
+                	document.body.classList.remove('is-editable');
+                	
+                    e.dataTransfer.setData('componentToMove', pageContent.getAttribute('id'));
+                    e.dataTransfer.setDragImage(pageContent.firstElementChild, (moveButton.parentNode.offsetLeft + moveButton.offsetLeft), (moveButton.parentNode.offsetTop + moveButton.offsetTop));
+                };
+                
+                moveButton.ondrag = function(e) {
+                	pageContent.classList.add('is-being-moved');
+                	document.body.classList.remove('is-editable');
+                };
+
+                moveButton.ondragend = function(e) {
+                    pageContent.classList.remove('is-being-moved');
+                    
+                    document.body.classList.add('is-editable');
+                };
+            	
+            	var moveUpButton = document.createElement('button');
+            	moveUpButton.setAttribute('title', 'MOVE UP');
+            	moveUpButton.classList.add('odh-page-content-action');
+            	moveUpButton.classList.add('move-up');
+            	
+            	icon = document.createElement('img');
+                icon.setAttribute('src', '/frontend/images/move-up.svg');
+                
+                moveUpButton.appendChild(icon);
+            	
+            	moveUpButton.onclick = function(e) {
+            		var contents = Array.prototype.slice.call(document.querySelectorAll('.odh-page-content'));
+            		var index = contents.indexOf(pageContent);
+            		
+            		if (index > 0) {
+            			pageContent.parentNode.insertBefore(pageContent, contents[index - 1]);
+            			
+            			self.ensureVisible(pageContent);
+            			
+	            		self.$server.rearrangedContents(Array.prototype.slice.call(document.querySelectorAll('.odh-page-content')).map(function(element) {
+                            return element.getAttribute('id');
+                        }));
+            		}
+            	};
+            	
+            	var moveDownButton = document.createElement('button');
+            	moveDownButton.setAttribute('title', 'MOVE DOWN');
+            	moveDownButton.classList.add('odh-page-content-action');
+            	moveDownButton.classList.add('move-down');
+            	
+            	icon = document.createElement('img');
+                icon.setAttribute('src', '/frontend/images/move-down.svg');
+                
+                moveDownButton.appendChild(icon);
+            	
+            	moveDownButton.onclick = function(e) {
+            		var contents = Array.prototype.slice.call(document.querySelectorAll('.odh-page-content'));
+                    var index = contents.indexOf(pageContent);
+                    
+                    if (index < (contents.length - 1)) {
+                        pageContent.parentNode.insertBefore(pageContent, contents[index + 1].nextSibling);
+                        
+                        self.ensureVisible(pageContent);
+                        
+                        self.$server.rearrangedContents(Array.prototype.slice.call(document.querySelectorAll('.odh-page-content')).map(function(element) {
+                            return element.getAttribute('id');
+                        }));
+                    }
+            	};
+            	
+            	var removeButton = document.createElement('button');
+            	removeButton.setAttribute('title', 'REMOVE');
+            	removeButton.classList.add('odh-page-content-action');
+            	removeButton.classList.add('remove');
+            	
+            	icon = document.createElement('img');
+                icon.setAttribute('src', '/frontend/images/remove.svg');
+                
+                removeButton.appendChild(icon);
+            	
+            	removeButton.onclick = function(e) {
+            		pageContent.parentNode.removeChild(pageContent);
+            		self.updatePlaceholder();
+            		
+            		self.$server.removedContent(uuid);
+            	};
+            	
+            	var controls = document.createElement('div');
+            	controls.classList.add('odh-page-content-actions');
+            	controls.appendChild(editButton);
+            	controls.appendChild(moveButton);
+            	controls.appendChild(moveUpButton);
+            	controls.appendChild(moveDownButton);
+            	controls.appendChild(removeButton);
+            	
+            	overlay.appendChild(controls);
+            }
+            
+            updatePlaceholder() {
+            	var document = this.shadowRoot.querySelector('iframe').contentWindow.document;
+            	var contents = Array.prototype.slice.call(document.querySelectorAll('.odh-page-content'));
+            	
+            	if (contents.length === 0) {
+            		document.getElementById('odh-contents').classList.add('is-empty');
+            	} else {
+            		document.getElementById('odh-contents').classList.remove('is-empty');
+            	}
+            }
+            
+            insertContent(uuid, assets, tag, markup, before) {
+            	var self = this;
+            	
+            	var document = this.shadowRoot.querySelector('iframe').contentWindow.document;
+            	var contents = document.getElementById('odh-contents');
+            	
+            	var pageContent = document.createElement('div');
+                pageContent.setAttribute('id', uuid);
+                pageContent.classList.add('odh-page-content');
+                pageContent.innerHTML = markup;
+                
+                if (!!before) {
+                	contents.insertBefore(pageContent, document.getElementById(before));
+                	contents.insertBefore(document.createTextNode('\n'), document.getElementById(before));
+                } else {
+                	contents.appendChild(pageContent);
+                	contents.appendChild(document.createTextNode('\n'));
+                }
+                
+                if (!!assets) {
+	                [].forEach.call(assets, function(asset) {
+	                    var script = document.querySelector('script[src="' + asset + '"]');
+		                if (!script) {
+		                	script = document.createElement('script');
+		                	script.setAttribute('src', asset);
+		                	script.setAttribute('async', true);
+		                	document.getElementById('odh-contents').appendChild(script);
+		               	}
+	                });
+                }
+                
+                self.injectControls(document, pageContent);
+                
+                self.updatePlaceholder();
+            }
+            
+            updateContent(uuid, markup) {
+            	var self = this;
+            	
+            	var document = this.shadowRoot.querySelector('iframe').contentWindow.document;
+            	
+            	var pageContent = document.getElementById(uuid);
+            	if (!!pageContent) {
+            		pageContent.innerHTML = markup;
+            		self.injectControls(document, pageContent);
+            	}
+            }
+
+            ready() {
+            	var self = this;
+            	
+                super.ready();
+                
+                var frame = this.shadowRoot.querySelector('iframe');
+                
+                frame.onload = function(e) {
+                	var targetDocument = frame.contentWindow.document;
+                	var targetElement = targetDocument.querySelector('body');
+                	
+                	var clearDropPlaceholdersTimeout = null;
+                	
+                	var getDropPlaceholderPosition = function(pageY) {
+                		var contents = Array.prototype.slice.call(targetDocument.querySelectorAll('.odh-page-content'));
+                		
+                        for (var i = 0; i < contents.length; i++) {
+                        	if (!contents[i].classList.contains('is-being-moved')) {
+                        		var middle = Math.floor(contents[i].offsetTop + (contents[i].clientHeight / 2));
+                        		
+	                            var from = 0;
+	                            if (i > 0) {
+	                                from = Math.floor(contents[i - 1].offsetTop + (contents[i - 1].clientHeight / 2));
+	                                
+	                                if (contents[i - 1].classList.contains('is-being-moved')) {
+	                                	from = middle;
+	                                }
+	                            }
+	                            
+	                            var to = (contents[i].offsetTop + contents[i].clientHeight);
+	                            if (i < (contents.length - 1)) {
+	                                to = Math.floor(contents[i + 1].offsetTop + (contents[i + 1].clientHeight / 2));
+	                                
+	                                if (contents[i + 1].classList.contains('is-being-moved')) {
+                                        to = middle;
+                                    }
+	                            }
+	                            
+	                            if (pageY >= from && pageY < middle) {
+	                                return { position: 'before', element: contents[i] };
+	                            } else if (pageY >= middle && (pageY < to || i === (contents.length - 1))) {
+	                                return { position: 'after', element: contents[i] };
+	                            }
+                        	}
+                        }
+                        
+                        return null;
+                	};
+                	
+                	targetElement.classList.add('is-editable');
+                    
+                    targetElement.addEventListener('dragenter', function(e) {
+                        e.preventDefault();
+                        
+                        targetElement.classList.remove('is-editable');
+                    }, false);
+                    
+                    targetElement.addEventListener('dragover', function(e) {
+                        e.preventDefault();
+                        
+                        targetElement.classList.remove('is-editable');
+                        
+                        if (!!clearDropPlaceholdersTimeout) {
+                        	clearTimeout(clearDropPlaceholdersTimeout);
+                        	clearDropPlaceholdersTimeout = null;
+                        }
+                        
+                        if (Array.prototype.slice.call(targetDocument.querySelectorAll('.odh-page-content')).length > 0) {
+                        	targetElement.classList.remove('is-dropping');
+                        	
+	                        var placeholderPosition = getDropPlaceholderPosition(e.pageY);
+	                        if (!!placeholderPosition) {
+	                        	var placeholderToCreateBefore = null;
+	                        	
+	                        	if (placeholderPosition.position === 'before' && (!placeholderPosition.element.previousElementSibling || !placeholderPosition.element.previousElementSibling.classList.contains('odh-page-content-drop-placeholder'))) {
+	                                placeholderToCreateBefore = placeholderPosition.element;
+	                        	} else if (placeholderPosition.position === 'after' && (!placeholderPosition.element.nextElementSibling || !placeholderPosition.element.nextElementSibling.classList.contains('odh-page-content-drop-placeholder'))) {
+	                                placeholderToCreateBefore = placeholderPosition.element.nextSibling;
+	                            }
+	                        	
+	                        	if (!!placeholderToCreateBefore) {
+	                                [].forEach.call(targetDocument.querySelectorAll('#odh-contents .odh-page-content-drop-placeholder'), function(placeholder) {
+	                                    placeholder.parentNode.removeChild(placeholder);
+	                                });
+	                                
+	                                var placeholder = targetDocument.createElement('div');
+	                                placeholder.classList.add('odh-page-content-drop-placeholder');
+	                                
+	                                placeholderPosition.element.parentNode.insertBefore(placeholder, placeholderToCreateBefore);
+	                        	}
+	                        } else {
+	                        	[].forEach.call(targetDocument.querySelectorAll('#odh-contents .odh-page-content-drop-placeholder'), function(placeholder) {
+	                                placeholder.parentNode.removeChild(placeholder);
+	                            });
+	                        }
+                        } else {
+                        	targetElement.classList.add('is-dropping');
+                        }
+                    }, false);
+                    
+                    targetElement.addEventListener('dragleave', function(e) {
+                        targetElement.classList.add('is-editable');
+                        targetElement.classList.remove('is-dropping');
+                        
+                    	clearDropPlaceholdersTimeout = setTimeout(function() {
+	                    	[].forEach.call(targetDocument.querySelectorAll('#odh-contents .odh-page-content-drop-placeholder'), function(placeholder) {
+	                            placeholder.parentNode.removeChild(placeholder);
+	                        });
+                    	}, 250);
+                    }, false);
+                    
+                    var onDrop = function(e) {
+                        var insertBefore = null;
+                        
+                        var currentPlaceholder = targetDocument.querySelector('#odh-contents .odh-page-content-drop-placeholder');
+                        if (!!currentPlaceholder && !!currentPlaceholder.nextElementSibling) {
+                        	insertBefore = currentPlaceholder.nextElementSibling.getAttribute('id');
+                        }
+                        
+                        var componentToInsert = e.dataTransfer.getData('componentToInsert');
+                        
+                        if (!!componentToInsert) {
+                            var unwrappedComponent = JSON.parse(componentToInsert);
+                            
+                            self.$server.droppedContent(unwrappedComponent.assets, unwrappedComponent.tag, unwrappedComponent.markup, insertBefore);
+                        }
+                        
+                        var componentToMove = e.dataTransfer.getData('componentToMove');
+                        
+                        if (!!componentToMove) {
+                        	var contents = targetDocument.getElementById('odh-contents');
+                        	
+                        	if (!!insertBefore) {
+                        		contents.insertBefore(targetDocument.getElementById(componentToMove), targetDocument.getElementById(insertBefore));
+                        		contents.insertBefore(document.createTextNode('\n'), targetDocument.getElementById(insertBefore));
+                        	} else {
+                        		contents.appendChild(targetDocument.getElementById(componentToMove));
+                                contents.appendChild(document.createTextNode('\n'));
+                        	}
+                        	
+                            self.$server.rearrangedContents(Array.prototype.slice.call(targetDocument.querySelectorAll('.odh-page-content')).map(function(element) {
+                                return element.getAttribute('id');
+                            }));
+                        }
+                        
+                        targetElement.classList.add('is-editable');
+                        targetElement.classList.remove('is-dropping');
+                        
+                        [].forEach.call(targetDocument.querySelectorAll('#odh-contents .odh-page-content-drop-placeholder'), function(placeholder) {
+                            placeholder.parentNode.removeChild(placeholder);
+                        });
+                    };
+
+                    targetElement.addEventListener('drop', onDrop, false);
+
+                    targetElement.addEventListener('dragdrop', onDrop, false);
+                    
+                    var placeholderIcon = frame.contentWindow.document.createElement('img');
+                    placeholderIcon.setAttribute('src', '/frontend/images/drag-drop.svg');
+                    placeholderIcon.classList.add('odh-page-contents-placeholder-icon');
+                    
+                    var placeholderMessage = frame.contentWindow.document.createElement('div');
+                    placeholderMessage.classList.add('odh-page-contents-placeholder-text');
+                    placeholderMessage.textContent = 'Drag and drop components onto this area to starting composing your page!';
+                    
+                    var placeholderWrapper = frame.contentWindow.document.createElement('div');
+                    placeholderWrapper.classList.add('odh-page-contents-placeholder-wrapper');
+                    placeholderWrapper.appendChild(placeholderIcon);
+                    placeholderWrapper.appendChild(placeholderMessage);
+                    
+                    var placeholderElement = frame.contentWindow.document.createElement('div');
+                    placeholderElement.classList.add('odh-page-contents-placeholder');
+                    placeholderElement.appendChild(placeholderWrapper);
+                    
+                    targetDocument.getElementById('odh-contents').appendChild(placeholderElement);
+                    
+                    var contents = targetDocument.querySelectorAll('#odh-contents .odh-page-content');
+                    [].forEach.call(contents, function(content) {
+                        self.injectControls(targetDocument, content);
+                    });
+                    
+                    self.updatePlaceholder();
+                }
+            }
+        }
+
+        customElements.define(PageEditor.is, PageEditor);
+    </script>
+</dom-module>

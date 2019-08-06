@@ -1,0 +1,10 @@
+server:
+    port: 8080
+    servlet:
+        session:
+            persistent: false
+
+spring:
+    servlet:
+        multipart:
+            enabled: false

@@ -48,10 +48,16 @@ mvn spring-boot:run
 
 ### Packaging
 
-Build and package the application as a JAR file (located in the target folder) for production use:
+Build and package the application as a runnable JAR file (located in the target folder) for production use:
 
 ```bash
-mvn clean package -Pproduction-mode
+mvn clean package -Pproduction-jar
+```
+
+If you wish to deploy the application as a WAR file on top of an existing servlet container, use the following command to generate a suitable file:
+
+```bash
+mvn clean package -Pproduction-war
 ```
 
 ## Testing
@@ -64,11 +70,13 @@ mvn clean test
 
 ## Deployment
 
-The application can be deployed by running the packaged runnable file on the specified port (or 8080 in case of missing parameter), like so:
+The application can be deployed by running the packaged runnable JAR file on the specified port (or 8080 in case of missing parameter), like so:
 
 ```bash
 java -jar -Dserver.port=80 path/to/odh-web-components-pagebuilder-[VERSION].jar
 ```
+
+If you have chosen to build the WAR file instead, deploy the generated `ROOT.war` file in the servlet container (preferably Apache Tomcat).
 
 ## Docker environment
 
