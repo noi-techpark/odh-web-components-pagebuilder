@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="23px" height="32px" viewBox="0 0 23 32" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <!-- Generator: Sketch 56.3 (81716) - https://sketch.com -->
+    <title>download-arrow</title>
+    <desc>Created with Sketch.</desc>
+    <g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="download-arrow" fill="#FFFFFF" fill-rule="nonzero">
+            <path d="M22.485,21.206 C22.914,20.762 22.914,20.063 22.485,19.619 C22.041,19.19 21.326,19.19 20.898,19.619 L12.851,27.666 L12.851,1.111 C12.851,0.492 12.359,0 11.74,0 C11.121,0 10.613,0.492 10.613,1.111 L10.613,27.666 L2.582,19.619 C2.138,19.19 1.439,19.19 0.995,19.619 C0.566,20.063 0.566,20.762 0.995,21.206 L10.947,31.158 C11.376,31.587 12.09,31.587 12.534,31.158 L22.485,21.206 Z" id="Path"></path>
+        </g>
+    </g>
+</svg>

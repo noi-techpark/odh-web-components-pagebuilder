@@ -1,0 +1,172 @@
+
+@import url('https://fonts.googleapis.com/css?family=Roboto&display=swap');
+
+#odh-contents {
+	pointer-events: none;
+}
+
+#odh-contents .odh-page-content {
+	min-height: 120px;
+	opacity: 1.0;
+	overflow: hidden;
+	pointer-events: none;
+	position: relative;
+	transition: all 0.2s ease-in-out;
+}
+
+body.is-editable #odh-contents .odh-page-content {
+	pointer-events: auto;
+}
+
+#odh-contents .odh-page-content.is-being-moved {
+    opacity: 0.5;
+}
+
+#odh-contents .odh-page-content .odh-page-content-overlay {
+	border: 8px dashed transparent;
+	bottom: 0;
+	left: 0;
+	opacity: 1.0;
+	overflow: hidden;
+	pointer-events: none;
+	position: absolute;
+	right: 0;
+	top: 0;
+	transition: all 0.2s ease-in-out;
+	z-index: 1000000000;
+}
+
+#odh-contents .odh-page-content .odh-page-content-overlay .odh-page-content-actions {
+	bottom: 8px;
+	pointer-events: none;
+	position: absolute;
+	right: 8px;
+	opacity: 1.0;
+	transition: all 0.2s ease-in-out;
+	z-index: 1000000000;
+}
+
+#odh-contents .odh-page-content.is-being-moved .odh-page-content-overlay .odh-page-content-actions {
+    opacity: 0.0;
+}
+
+#odh-contents .odh-page-content .odh-page-content-overlay .odh-page-content-actions .odh-page-content-action {
+	appearance: none;
+	-webkit-appearance: none;
+	background: rgb(22, 118, 243);
+	border: 0;
+	cursor: pointer;
+	display: block;
+	float: left;
+	height: 32px;
+	margin: 0 0 0 8px;
+	opacity: 0;
+	pointer-events: auto;
+	transition: all 0.2s ease-in-out;
+	transform: translateY(60px);
+	width: 32px;
+}
+
+#odh-contents .odh-page-content .odh-page-content-overlay .odh-page-content-actions .odh-page-content-action img {
+	max-height: 50%;
+	max-width: 100%;
+}
+
+body.is-editable #odh-contents .odh-page-content:hover .odh-page-content-overlay {
+    border-color: rgb(22, 118, 243);
+}
+
+body.is-editable #odh-contents .odh-page-content:hover .odh-page-content-overlay .odh-page-content-actions .odh-page-content-action {
+	opacity: 1;
+	transform: translateY(0);
+}
+
+#odh-contents .odh-page-content:hover .odh-page-content-overlay .odh-page-content-actions .odh-page-content-action.edit {
+	transition-delay: 0.02s;
+}
+
+#odh-contents .odh-page-content:hover .odh-page-content-overlay .odh-page-content-actions .odh-page-content-action.move {
+	cursor: move;
+	transition-delay: 0.04s;
+}
+
+#odh-contents .odh-page-content:hover .odh-page-content-overlay .odh-page-content-actions .odh-page-content-action.move-up {
+	transition-delay: 0.06s;
+}
+
+#odh-contents .odh-page-content:hover .odh-page-content-overlay .odh-page-content-actions .odh-page-content-action.move-down {
+	transition-delay: 0.08s;
+}
+
+#odh-contents .odh-page-content:hover .odh-page-content-overlay .odh-page-content-actions .odh-page-content-action.remove {
+	transition-delay: 0.10s;
+}
+
+#odh-contents .odh-page-content-drop-placeholder {
+    background: transparent;
+    height: 240px;
+    pointer-events: none;
+    position: relative;
+    width: 100%;
+}
+
+#odh-contents .odh-page-content-drop-placeholder:before {
+    bottom: 8px;
+    border: 8px dashed rgb(22, 118, 243);
+    content: '';
+    display: block;
+    left: 8px;
+    position: absolute;
+    right: 8px;
+    top: 8px;
+}
+
+#odh-contents .odh-page-contents-placeholder {
+	display: none;
+    height: 600px;
+    pointer-events: none;
+    position: relative;
+    width: 100%;
+}
+
+#odh-contents .odh-page-contents-placeholder:before {
+    bottom: 8px;
+    border: 8px dashed #cccccc;
+    content: '';
+    display: block;
+    left: 8px;
+    position: absolute;
+    right: 8px;
+    top: 8px;
+    transition: all 0.2s ease-in-out;
+}
+
+body.is-dropping #odh-contents .odh-page-contents-placeholder:before {
+    border-color: rgb(22, 118, 243);
+}
+
+#odh-contents .odh-page-contents-placeholder .odh-page-contents-placeholder-wrapper {
+	box-sizing: border-box;
+	padding: 96px;
+	position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 100%;
+}
+
+#odh-contents .odh-page-contents-placeholder .odh-page-contents-placeholder-wrapper .odh-page-contents-placeholder-icon {
+	display: block;
+	margin: 0 auto 32px auto;
+	width: 160px;
+}
+
+#odh-contents .odh-page-contents-placeholder .odh-page-contents-placeholder-wrapper .odh-page-contents-placeholder-text {
+	color: #666666;
+    font-family: 'Roboto', sans-serif;
+    font-size: 2em;
+    text-align: center;
+}
+
+#odh-contents.is-empty .odh-page-contents-placeholder {
+	display: block;
+}
