@@ -94,11 +94,6 @@ public class LocalConfiguration {
                 sh 'mvn -B -U clean test verify -Pintegration-tests'
             }
         }
-        stage('Build') {
-            steps {
-                sh 'mvn -B -U clean install package -Pproduction-war'
-            }
-        }
         stage('Deploy') {
             steps{
                 sh 'mvn -B -U -Pproduction-war tomcat:redeploy -Dmaven.tomcat.url=${TESTSERVER_TOMCAT_ENDPOINT} -Dmaven.tomcat.server=testServer'
