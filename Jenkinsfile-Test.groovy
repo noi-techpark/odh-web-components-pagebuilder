@@ -96,7 +96,7 @@ public class LocalConfiguration {
         }
         stage('Deploy') {
             steps{
-                sh 'mvn -B -U -X -Pproduction-war tomcat:redeploy -Dmaven.tomcat.url=${TESTSERVER_TOMCAT_ENDPOINT} -Dmaven.tomcat.server=testServer'
+                sh 'mvn -B -U -Pproduction-war tomcat:redeploy -Dmaven.tomcat.url=${TESTSERVER_TOMCAT_ENDPOINT} -Dmaven.tomcat.server=testServer'
             }
         }
     }
