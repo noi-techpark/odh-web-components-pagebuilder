@@ -49,6 +49,7 @@ public class LocalConfiguration {
     @Bean(destroyMethod = "close")
     public DataSource dataSource(Environment env) {
         HikariConfig config = new HikariConfig();
+        config.setDriverClassName("org.postgresql.Driver");
         config.setJdbcUrl("jdbc:postgresql://localhost:5432/pagebuilder");
         config.setUsername("pagebuilder");
         config.setPassword("s3cret");

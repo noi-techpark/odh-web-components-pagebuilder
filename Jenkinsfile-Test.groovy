@@ -37,6 +37,7 @@ public class LocalConfiguration {
     @Bean(destroyMethod = "close")
     public DataSource dataSource(Environment env) {
         HikariConfig config = new HikariConfig();
+        config.setDriverClassName("org.postgresql.Driver");
         config.setJdbcUrl("${POSTGRES_URL}");
         config.setUsername("${POSTGRES_USERNAME}");
         config.setPassword("${POSTGRES_PASSWORD}");
@@ -96,7 +97,7 @@ public class LocalConfiguration {
         }
         stage('Deploy') {
             steps{
-                sh 'mvn -B -U -Pproduction-war tomcat:redeploy -Dmaven.tomcat.url=${TESTSERVER_TOMCAT_ENDPOINT} -Dmaven.tomcat.server=testServer'
+                sh 'mvn -B -U -Pproduction-war tomcat:redeploy -Dmaven.tomcat.url=${TESTSERVER_TOMCAT_ENDPOINT} -Dmaven.tomcat.server=testServer -Dmaven.tomcat.path=/'
             }
         }
     }
