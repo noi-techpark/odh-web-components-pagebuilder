@@ -11,15 +11,15 @@ import freemarker.template.TemplateDirectiveBody;
 import freemarker.template.TemplateDirectiveModel;
 import freemarker.template.TemplateException;
 import freemarker.template.TemplateModel;
-import it.bz.opendatahub.webcomponentspagebuilder.data.Page;
-import it.bz.opendatahub.webcomponentspagebuilder.data.PageContent;
+import it.bz.opendatahub.webcomponentspagebuilder.data.entities.PageContent;
+import it.bz.opendatahub.webcomponentspagebuilder.data.entities.PageVersion;
 
 public class PageContentsDirective implements TemplateDirectiveModel {
 
-	private Page page;
+	private PageVersion page;
 
-	public PageContentsDirective(Page page) {
-		this.page = page;
+	public PageContentsDirective(PageVersion pageVersion) {
+		this.page = pageVersion;
 	}
 
 	@SuppressWarnings("rawtypes")
@@ -38,7 +38,7 @@ public class PageContentsDirective implements TemplateDirectiveModel {
 			}
 
 			out.append(String.format("<div id=\"%s\" class=\"odh-page-content\">\n%s\n</div>\n",
-					pageContent.getId().toString(), pageContent.getMarkup()));
+					pageContent.getIdAsString(), pageContent.getMarkup()));
 		}
 
 		for (String asset : assets) {

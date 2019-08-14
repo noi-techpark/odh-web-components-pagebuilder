@@ -1,4 +1,4 @@
-package it.bz.opendatahub.webcomponentspagebuilder.ui;
+package it.bz.opendatahub.webcomponentspagebuilder.ui.dialogs;
 
 import java.util.Optional;
 
@@ -16,7 +16,7 @@ import com.vaadin.flow.data.binder.ValidationResult;
 import com.vaadin.flow.data.binder.ValueContext;
 import com.vaadin.flow.data.validator.AbstractValidator;
 
-import it.bz.opendatahub.webcomponentspagebuilder.data.PageContent;
+import it.bz.opendatahub.webcomponentspagebuilder.data.entities.PageContent;
 
 /**
  * Dialog for managing the markup of a selected page content, which allows

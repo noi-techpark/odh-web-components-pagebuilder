@@ -1,9 +1,10 @@
-package it.bz.opendatahub.webcomponentspagebuilder.data;
+package it.bz.opendatahub.webcomponentspagebuilder.data.entities;
 
 import java.util.LinkedList;
 import java.util.List;
 
 import javax.persistence.Column;
+import javax.persistence.Convert;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.JoinColumn;
@@ -11,15 +12,15 @@ import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 import javax.validation.constraints.NotNull;
 
-import org.hibernate.annotations.Type;
+import it.bz.opendatahub.webcomponentspagebuilder.data.converters.StringListAttributeConverter;
 
 @Entity
 @Table(name = "pagebuilder_page_content")
 public class PageContent extends BaseEntity {
 
 	@ManyToOne(fetch = FetchType.EAGER)
-	@JoinColumn(name = "page_id")
-	private Page page;
+	@JoinColumn(name = "page_version_id")
+	private PageVersion pageVersion;
 
 	@Column(name = "tag_name")
 	@NotNull
@@ -27,7 +28,7 @@ public class PageContent extends BaseEntity {
 
 	@Column(name = "assets")
 	@NotNull
-	@Type(type = "serializable")
+	@Convert(converter = StringListAttributeConverter.class)
 	private List<String> assets = new LinkedList<>();
 
 	@Column(name = "markup")
@@ -39,15 +40,15 @@ public class PageContent extends BaseEntity {
 	private Integer position;
 
 	public PageContent() {
-		// TODO Auto-generated constructor stub
+
 	}
 
-	public Page getPage() {
-		return page;
+	public PageVersion getPageVersion() {
+		return pageVersion;
 	}
 
-	public void setPage(Page page) {
-		this.page = page;
+	public void setPageVersion(PageVersion pageVersion) {
+		this.pageVersion = pageVersion;
 	}
 
 	public String getTagName() {
@@ -80,6 +81,16 @@ public class PageContent extends BaseEntity {
 
 	public void setPosition(Integer position) {
 		this.position = position;
+	}
+
+	public PageContent copy() {
+		PageContent copy = new PageContent();
+		copy.setTagName(getTagName());
+		copy.setAssets(getAssets());
+		copy.setMarkup(getMarkup());
+		copy.setPosition(getPosition());
+
+		return copy;
 	}
 
 }

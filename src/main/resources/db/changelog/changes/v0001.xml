@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="UTF-8"?>
-
 <databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
@@ -7,7 +6,8 @@
 
     <changeSet id="v0001" author="danielrampanelli">
 
-        <createTable tableName="pagebuilder_page" remarks="TODO">
+        <createTable tableName="pagebuilder_page"
+            remarks="Stores all defined pages.">
             <column name="id" type="uuid">
                 <constraints nullable="false" unique="true" primaryKey="true"
                     primaryKeyName="pk_5d43b5feeb5ff" />
@@ -39,7 +39,8 @@
         <addUniqueConstraint constraintName="uk_5d43bdeb05976_uri"
             tableName="pagebuilder_page" columnNames="domain_name, path_name" />
 
-        <createTable tableName="pagebuilder_page_content" remarks="TODO">
+        <createTable tableName="pagebuilder_page_content"
+            remarks="Stores all the single contents associated to a page.">
             <column name="id" type="uuid">
                 <constraints nullable="false" unique="true" primaryKey="true"
                     primaryKeyName="pk_5d43bd67151c6" />

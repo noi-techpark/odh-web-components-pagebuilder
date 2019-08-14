@@ -9,14 +9,14 @@ import freemarker.template.TemplateDirectiveBody;
 import freemarker.template.TemplateDirectiveModel;
 import freemarker.template.TemplateException;
 import freemarker.template.TemplateModel;
-import it.bz.opendatahub.webcomponentspagebuilder.data.Page;
+import it.bz.opendatahub.webcomponentspagebuilder.data.entities.PageVersion;
 
 public class PageMetaTagsDirective implements TemplateDirectiveModel {
 
-	private Page page;
+	private PageVersion page;
 
-	public PageMetaTagsDirective(Page page) {
-		this.page = page;
+	public PageMetaTagsDirective(PageVersion pageVersion) {
+		this.page = pageVersion;
 	}
 
 	@SuppressWarnings("rawtypes")

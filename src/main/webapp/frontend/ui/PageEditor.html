@@ -48,10 +48,6 @@
             	var frame = this.shadowRoot.querySelector('iframe');
             	var element = frame.contentWindow.document.body;
             	
-            	console.log('Scroll Top', element.scrollTop);
-            	console.log('Frame Height', frame.clientHeight);
-            	console.log('Content Height', pageContent.clientHeight);
-            	
             	if (pageContent.clientHeight < frame.clientHeight) {
             		if ((element.scrollTop + frame.clientHeight) < (pageContent.offsetTop + pageContent.clientHeight)) {
             			self.scrollTo(element, element.scrollTop + (frame.clientHeight - pageContent.clientHeight) + 32, 1000);
