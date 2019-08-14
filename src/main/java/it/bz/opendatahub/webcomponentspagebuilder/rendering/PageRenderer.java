@@ -14,12 +14,12 @@ import freemarker.template.MalformedTemplateNameException;
 import freemarker.template.Template;
 import freemarker.template.TemplateException;
 import freemarker.template.TemplateNotFoundException;
-import it.bz.opendatahub.webcomponentspagebuilder.data.Page;
+import it.bz.opendatahub.webcomponentspagebuilder.data.entities.PageVersion;
 
 @Component
 public class PageRenderer {
 
-	public String renderPage(Page page) throws TemplateNotFoundException, MalformedTemplateNameException,
+	public String renderPage(PageVersion pageVersion) throws TemplateNotFoundException, MalformedTemplateNameException,
 			ParseException, IOException, TemplateException {
 		ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 
@@ -27,8 +27,8 @@ public class PageRenderer {
 
 		Configuration configuration = new Configuration(Configuration.VERSION_2_3_28);
 		configuration.setClassForTemplateLoading(PageRenderer.class, "/templates");
-		configuration.setSharedVariable("metas", new PageMetaTagsDirective(page));
-		configuration.setSharedVariable("contents", new PageContentsDirective(page));
+		configuration.setSharedVariable("metas", new PageMetaTagsDirective(pageVersion));
+		configuration.setSharedVariable("contents", new PageContentsDirective(pageVersion));
 
 		Template template = configuration.getTemplate("default.ftl");
 		template.process(new HashMap<>(), writer);

@@ -1,19 +1,57 @@
 <custom-style>
     <style>
-        .page-builder .page-wrapper {
+        .manage-page-view .page-header,
+        .edit-page-version-view .page-header {
+            height: 76px;
+        }
+        
+        .manage-page-view .page-header .contains-page-label,
+        .edit-page-version-view .page-header .contains-page-label {
+            font-size: 1.8em;
+            font-weight: 300;
+            line-height: 42px;
+        }
+        
+        .manage-page-view .page-header .contains-page-label a,
+        .edit-page-version-view .page-header .contains-page-label a {
+            color: var(--lumo-body-text-color);
+        }
+    
+        .manage-page-view .is-version-placeholder {
+            border: 8px dashed #ababab;
+            min-height: 240px;
+            position: relative;
+        }
+        
+        .manage-page-view .is-version-placeholder .placeholder-contents {
+            margin: 0;
+            padding: 32px;
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+        
+        .edit-page-version-view .page-editor-wrapper {
             background-color: #333333;
             overflow: auto;
             padding: 32px;
         }
         
-        .page-builder .components {
+        .edit-page-version-view .contains-sidebar {
+            box-sizing: border-box;
+            flex: 0 0 528px;
+            padding: 0 1em 0 0;
+        }
+        
+        .edit-page-version-view .contains-sidebar .components {
             margin-left: -8px;
             margin-right: -8px;
             overflow: hidden;
         }
         
-        .page-builder .components .page-content-card {
+        .edit-page-version-view .components .page-content-card {
             background-color: #ffffff;
+            cursor: move;
             display: inline-block;
             margin: 8px;
         }

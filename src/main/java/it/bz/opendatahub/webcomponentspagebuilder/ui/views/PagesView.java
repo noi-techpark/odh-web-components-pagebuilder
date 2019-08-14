@@ -1,11 +1,10 @@
-package it.bz.opendatahub.webcomponentspagebuilder.ui;
+package it.bz.opendatahub.webcomponentspagebuilder.ui.views;
 
 import javax.annotation.PostConstruct;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 
-import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
@@ -16,27 +15,25 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.router.Route;
-import com.vaadin.flow.server.PWA;
 
-import it.bz.opendatahub.webcomponentspagebuilder.data.Page;
-import it.bz.opendatahub.webcomponentspagebuilder.data.PageRepository;
+import it.bz.opendatahub.webcomponentspagebuilder.data.entities.Page;
+import it.bz.opendatahub.webcomponentspagebuilder.data.repositories.PageRepository;
+import it.bz.opendatahub.webcomponentspagebuilder.ui.MainLayout;
+import it.bz.opendatahub.webcomponentspagebuilder.ui.dialogs.CreatePageDialog;
 
-/**
- * Main UI of the page builder providing the page "canvas" and the tools for
- * creating or managing the web components
- */
-@Route
-@PWA(name = "OpenDataHub Web Components Page Builder", shortName = "Page Builder")
+@Route(value = PagesView.ROUTE, layout = MainLayout.class)
 @HtmlImport("frontend://styles/shared-styles.html")
-public class MainView extends VerticalLayout {
+public class PagesView extends VerticalLayout {
 
 	private static final long serialVersionUID = -3885159105695452537L;
+
+	public static final String ROUTE = "";
 
 	@Autowired
 	ApplicationContext applicationContext;
 
 	@Autowired
-	PageRepository pageRepo;
+	PageRepository pagesRepo;
 
 	private Grid<Page> grid;
 
@@ -47,19 +44,13 @@ public class MainView extends VerticalLayout {
 
 		grid.addColumn(Page::getLabel).setFlexGrow(1).setHeader("PAGE");
 
-		grid.addColumn(Page::getUri).setFlexGrow(1).setHeader("URL");
+		// grid.addColumn(Page::getUri).setFlexGrow(1).setHeader("URL");
 
 		grid.addColumn(new ComponentRenderer<>(page -> {
-			Button previewButton = new Button("PREVIEW");
-			previewButton.addClickListener(e -> {
-				UI.getCurrent().getPage()
-						.executeJavaScript(String.format("window.open('/preview/%s', '_blank');", page.getHash()));
-			});
-
-			Button editButton = new Button("EDIT");
-			editButton.addThemeVariants(ButtonVariant.LUMO_SUCCESS);
-			editButton.addClickListener(e -> {
-				getUI().ifPresent(ui -> ui.navigate(String.format("page/%s", page.getId().toString())));
+			Button manageButton = new Button("MANAGE");
+			manageButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+			manageButton.addClickListener(e -> {
+				getUI().ifPresent(ui -> ui.navigate(ManagePageView.class, page.getId().toString()));
 			});
 
 			Button archiveButton = new Button("ARCHIVE");
@@ -68,8 +59,9 @@ public class MainView extends VerticalLayout {
 				ConfirmDialog dialog = new ConfirmDialog("ARCHIVE", "Are you sure you want to archive this page?",
 						"ARCHIVE", (dialogEvent) -> {
 							page.setArchived(true);
+							page.setPublication(null);
 
-							pageRepo.save(page);
+							pagesRepo.save(page);
 
 							refresh();
 
@@ -83,14 +75,14 @@ public class MainView extends VerticalLayout {
 				dialog.open();
 			});
 
-			return new HorizontalLayout(previewButton, editButton, archiveButton);
-		})).setHeader("ACTIONS").setFlexGrow(0).setWidth("400px");
+			return new HorizontalLayout(manageButton, archiveButton);
+		})).setHeader("ACTIONS").setFlexGrow(0).setWidth("320px");
 
-		add(new Button("NEW PAGE", e -> {
+		add(new Button("CREATE PAGE", e -> {
 			CreatePageDialog dialog = applicationContext.getBean(CreatePageDialog.class);
 
 			dialog.setSaveHandler((createPage) -> {
-				getUI().ifPresent(ui -> ui.navigate(String.format("page/%s", createPage.getId().toString())));
+				getUI().ifPresent(ui -> ui.navigate(ManagePageView.class, createPage.getIdAsString()));
 
 				Notification.show("Page created!");
 			});
@@ -99,9 +91,10 @@ public class MainView extends VerticalLayout {
 		}));
 
 		add(grid);
+		expand(grid);
 
-		setMargin(true);
-		setPadding(false);
+		setMargin(false);
+		setPadding(true);
 		setSizeFull();
 		setSpacing(true);
 
@@ -109,7 +102,7 @@ public class MainView extends VerticalLayout {
 	}
 
 	public void refresh() {
-		grid.setItems(pageRepo.findAllActive());
+		grid.setItems(pagesRepo.findAllActive());
 	}
 
 }

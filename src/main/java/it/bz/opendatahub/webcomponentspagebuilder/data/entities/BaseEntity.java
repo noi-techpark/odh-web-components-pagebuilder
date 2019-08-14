@@ -1,4 +1,4 @@
-package it.bz.opendatahub.webcomponentspagebuilder.data;
+package it.bz.opendatahub.webcomponentspagebuilder.data.entities;
 
 import java.util.UUID;
 
@@ -20,6 +20,10 @@ public abstract class BaseEntity {
 
 	public void setId(UUID id) {
 		this.id = id;
+	}
+
+	public String getIdAsString() {
+		return getId().toString();
 	}
 
 }
