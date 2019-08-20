@@ -43,8 +43,8 @@ import it.bz.opendatahub.webcomponentspagebuilder.data.repositories.PageReposito
 import it.bz.opendatahub.webcomponentspagebuilder.data.repositories.PageVersionRepository;
 import it.bz.opendatahub.webcomponentspagebuilder.rendering.PageRenderer;
 import it.bz.opendatahub.webcomponentspagebuilder.ui.MainLayout;
-import it.bz.opendatahub.webcomponentspagebuilder.ui.PageContentCard;
-import it.bz.opendatahub.webcomponentspagebuilder.ui.PageEditor;
+import it.bz.opendatahub.webcomponentspagebuilder.ui.components.PageContentCard;
+import it.bz.opendatahub.webcomponentspagebuilder.ui.components.PageEditor;
 import it.bz.opendatahub.webcomponentspagebuilder.ui.controllers.PublicationController;
 
 @Route(value = EditPageVersionView.ROUTE, layout = MainLayout.class)

@@ -1,6 +1,5 @@
 package it.bz.opendatahub.webcomponentspagebuilder.ui.views;
 
-import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Optional;
 import java.util.UUID;
@@ -19,7 +18,6 @@ import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.dependency.HtmlImport;
 import com.vaadin.flow.component.html.Div;
-import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
@@ -35,6 +33,7 @@ import it.bz.opendatahub.webcomponentspagebuilder.data.entities.PageVersion;
 import it.bz.opendatahub.webcomponentspagebuilder.data.repositories.PageRepository;
 import it.bz.opendatahub.webcomponentspagebuilder.rendering.PageRenderer;
 import it.bz.opendatahub.webcomponentspagebuilder.ui.MainLayout;
+import it.bz.opendatahub.webcomponentspagebuilder.ui.components.PageScreenshot;
 import it.bz.opendatahub.webcomponentspagebuilder.ui.controllers.PublicationController;
 import it.bz.opendatahub.webcomponentspagebuilder.ui.dialogs.DuplicatePageDialog;
 import it.bz.opendatahub.webcomponentspagebuilder.ui.dialogs.DuplicatePageDialog.PageToDuplicate;
@@ -141,11 +140,10 @@ public class ManagePageView extends VerticalLayout implements HasUrlParameter<St
 					pageVersion.getUpdatedAt().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss"))))));
 			details.add(buttons);
 
-			Image image = new Image();
+			PageScreenshot image = new PageScreenshot();
 			image.setSrc(String.format("/pages/preview/%s.png?%s", pageVersion.getIdAsString(),
 					DigestUtils.md5Hex(StringUtils.join(pageVersion.getContents().stream().map(PageContent::getMarkup)
 							.collect(Collectors.toList())))));
-			image.setWidthFull();
 
 			VerticalLayout layout = new VerticalLayout();
 			layout.setPadding(false);
@@ -157,24 +155,7 @@ public class ManagePageView extends VerticalLayout implements HasUrlParameter<St
 		} else {
 			Button createButton = new Button("CREATE DRAFT");
 			createButton.addClickListener(e -> {
-				PageVersion draftVersion = new PageVersion();
-				draftVersion.setPage(page);
-				draftVersion.setHash(DigestUtils.sha1Hex(UUID.randomUUID().toString()));
-				draftVersion.setUpdatedAt(LocalDateTime.now());
-
-				if (page.getPublicVersion() != null) {
-					PageVersion publicVersion = page.getPublicVersion();
-
-					draftVersion.setTitle(publicVersion.getTitle());
-					draftVersion.setDescription(publicVersion.getDescription());
-					draftVersion.setContents(publicVersion.getContents().stream().map(pageContent -> {
-						PageContent copy = pageContent.copy();
-						copy.setPageVersion(draftVersion);
-						return copy;
-					}).collect(Collectors.toList()));
-				}
-
-				page.setDraftVersion(draftVersion);
+				page.setDraftVersion(publicationController.createDraft(page));
 
 				page = pagesRepo.save(page);
 
@@ -224,6 +205,17 @@ public class ManagePageView extends VerticalLayout implements HasUrlParameter<St
 				buttons.add(visitButton);
 			}
 
+			Button unpublishButton = new Button("UNPUBLISH");
+			unpublishButton.addClickListener(e -> {
+				publicationController.unpublish(pageVersion, (updatedPage) -> {
+					page = updatedPage;
+
+					refresh();
+				});
+			});
+
+			buttons.add(unpublishButton);
+
 			Button duplicateButton = new Button("DUPLICATE");
 			duplicateButton.addClickListener(e -> {
 				DuplicatePageDialog dialog = applicationContext.getBean(DuplicatePageDialog.class);
@@ -247,11 +239,10 @@ public class ManagePageView extends VerticalLayout implements HasUrlParameter<St
 					pageVersion.getUpdatedAt().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss"))))));
 			details.add(buttons);
 
-			Image image = new Image();
+			PageScreenshot image = new PageScreenshot();
 			image.setSrc(String.format("/pages/preview/%s.png?%s", pageVersion.getIdAsString(),
 					DigestUtils.md5Hex(StringUtils.join(pageVersion.getContents().stream().map(PageContent::getMarkup)
 							.collect(Collectors.toList())))));
-			image.setWidthFull();
 
 			VerticalLayout layout = new VerticalLayout();
 			layout.setPadding(false);

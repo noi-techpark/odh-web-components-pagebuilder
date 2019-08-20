@@ -1,4 +1,4 @@
-package it.bz.opendatahub.webcomponentspagebuilder.ui;
+package it.bz.opendatahub.webcomponentspagebuilder.ui.components;
 
 import java.util.ArrayList;
 import java.util.Arrays;

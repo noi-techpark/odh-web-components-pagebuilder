@@ -81,6 +81,11 @@ public class LocalConfiguration {
         
         return provider;
     }
+    
+    @Bean
+    public ScreenshotRenderer screenshotRenderer() {
+        return new ChromeWebDriverScreenshotRenderer("/path/to/driver", "/path/to/browser");
+    }
 
 }
 ```
@@ -124,6 +129,8 @@ java -jar -Dserver.port=80 path/to/odh-web-components-pagebuilder-[VERSION].jar
 ```
 
 If you have chosen to build the WAR file instead, deploy the generated `ROOT.war` file in the servlet container (preferably Apache Tomcat).
+
+In order to render the page screenshot/preview images correctly, you have to ensure that the configured `ScreenshotRenderer` has access to all required binaries.
 
 ## Docker environment
 

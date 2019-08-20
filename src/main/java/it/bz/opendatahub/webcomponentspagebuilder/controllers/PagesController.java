@@ -8,10 +8,6 @@ import java.util.UUID;
 import javax.servlet.http.HttpServletRequest;
 
 import org.apache.commons.io.IOUtils;
-import org.openqa.selenium.OutputType;
-import org.openqa.selenium.TakesScreenshot;
-import org.openqa.selenium.chrome.ChromeDriver;
-import org.openqa.selenium.chrome.ChromeOptions;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -22,16 +18,19 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import freemarker.template.TemplateException;
-import io.github.bonigarcia.wdm.ChromeDriverManager;
 import it.bz.opendatahub.webcomponentspagebuilder.data.entities.PageVersion;
 import it.bz.opendatahub.webcomponentspagebuilder.data.repositories.PageVersionRepository;
 import it.bz.opendatahub.webcomponentspagebuilder.rendering.PageRenderer;
+import it.bz.opendatahub.webcomponentspagebuilder.rendering.screenshots.ScreenshotRenderer;
 
 @RestController
 public class PagesController {
 
 	@Autowired
 	PageVersionRepository versionsRepo;
+
+	@Autowired(required = false)
+	ScreenshotRenderer screenshotRenderer;
 
 	@Autowired
 	PageRenderer pageRenderer;
@@ -68,28 +67,17 @@ public class PagesController {
 		Optional<PageVersion> page = versionsRepo.findById(UUID.fromString(uuid));
 
 		if (page.isPresent()) {
+			if (screenshotRenderer == null) {
+				return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+			}
+
+			String url = String.format("%s://%s:%d/pages/preview/%s", request.getScheme(), request.getServerName(),
+					request.getServerPort(), page.get().getHash());
+
 			HttpHeaders headers = new HttpHeaders();
 			headers.setContentType(MediaType.IMAGE_PNG);
 
-			System.setProperty("webdriver.chrome.args", "--disable-logging");
-			System.setProperty("webdriver.chrome.silentOutput", "true");
-
-			ChromeDriverManager.getInstance(ChromeOptions.class).setup();
-
-			ChromeOptions chromeOptions = new ChromeOptions();
-			chromeOptions.addArguments("--log-level=OFF");
-			chromeOptions.addArguments("--silent");
-			chromeOptions.addArguments("--headless");
-			chromeOptions.addArguments("--window-size=1280,960");
-			chromeOptions.addArguments("--hide-scrollbars");
-
-			ChromeDriver driver = new ChromeDriver(chromeOptions);
-			driver.get(String.format("%s://%s:%d/pages/preview/%s", request.getScheme(), request.getServerName(),
-					request.getServerPort(), page.get().getHash()));
-
-			byte[] screenshot = ((TakesScreenshot) driver).getScreenshotAs(OutputType.BYTES);
-
-			driver.close();
+			byte[] screenshot = screenshotRenderer.renderScreenshot(url);
 
 			return new ResponseEntity<>(screenshot, headers, HttpStatus.OK);
 		}

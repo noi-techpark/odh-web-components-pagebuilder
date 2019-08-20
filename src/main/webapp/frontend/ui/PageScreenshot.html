@@ -1,0 +1,59 @@
+<dom-module id="pagebuilder-page-screenshot">
+    <template>
+		<style>
+		    :host {
+		        width: 100%;
+		    }
+		
+			#image {
+				display: none;
+				max-width: 100%;
+			}
+			
+			#message {
+			    box-sizing: border-box;
+			    border: 8px dashed #cccccc;
+				display: block;
+			    padding: 6em 2em;
+			    text-align: center;
+			}
+		</style>
+	    <img id="image" />
+	    <div id="message"></div>
+    </template>
+    <script>
+        class PageScreenshot extends Polymer.Element {
+            static get is() {
+                return 'pagebuilder-page-screenshot';
+            }
+            
+            load(url) {
+            	var self = this;
+            	
+            	var image = this.shadowRoot.getElementById('image');
+            	var message = this.shadowRoot.getElementById('message');
+                var urlCreator = window.URL || window.webkitURL;
+                
+                message.textContent = 'Preview is being generated...';
+                
+                fetch(url).then(function(response) {
+                    if (response.status === 200) {
+                    	response.blob().then(function(data) {
+                            message.style.display = 'none';
+                            image.style.display = 'block';
+                            image.src = urlCreator.createObjectURL(data);
+                        });
+                    } else {
+                        message.textContent = 'Page preview not available.';
+                    }
+                });
+            }
+            
+            ready() {
+                super.ready();
+            }
+        }
+
+        customElements.define(PageScreenshot.is, PageScreenshot);
+    </script>
+</dom-module>
