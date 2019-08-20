@@ -10,7 +10,7 @@
 				max-width: 100%;
 			}
 			
-			#placeholder {
+			#message {
 			    box-sizing: border-box;
 			    border: 8px dashed #cccccc;
 				display: block;
@@ -19,7 +19,7 @@
 			}
 		</style>
 	    <img id="image" />
-	    <div id="placeholder">Preview is being generated...</div>
+	    <div id="message"></div>
     </template>
     <script>
         class PageScreenshot extends Polymer.Element {
@@ -31,17 +31,21 @@
             	var self = this;
             	
             	var image = this.shadowRoot.getElementById('image');
-            	var placeholder = this.shadowRoot.getElementById('placeholder');
+            	var message = this.shadowRoot.getElementById('message');
                 var urlCreator = window.URL || window.webkitURL;
                 
+                message.textContent = 'Preview is being generated...';
+                
                 fetch(url).then(function(response) {
-                    console.log(response);
-                    
-                    response.blob().then(function(data) {
-                    	placeholder.style.display = 'none';
-                    	image.style.display = 'block';
-                        image.src = urlCreator.createObjectURL(data);
-                    });
+                    if (response.status === 200) {
+                    	response.blob().then(function(data) {
+                            message.style.display = 'none';
+                            image.style.display = 'block';
+                            image.src = urlCreator.createObjectURL(data);
+                        });
+                    } else {
+                        message.textContent = 'Page preview not available.';
+                    }
                 });
             }
             
