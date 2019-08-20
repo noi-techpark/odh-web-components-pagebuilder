@@ -18,7 +18,6 @@ import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.dependency.HtmlImport;
 import com.vaadin.flow.component.html.Div;
-import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
@@ -34,6 +33,7 @@ import it.bz.opendatahub.webcomponentspagebuilder.data.entities.PageVersion;
 import it.bz.opendatahub.webcomponentspagebuilder.data.repositories.PageRepository;
 import it.bz.opendatahub.webcomponentspagebuilder.rendering.PageRenderer;
 import it.bz.opendatahub.webcomponentspagebuilder.ui.MainLayout;
+import it.bz.opendatahub.webcomponentspagebuilder.ui.components.PageScreenshot;
 import it.bz.opendatahub.webcomponentspagebuilder.ui.controllers.PublicationController;
 import it.bz.opendatahub.webcomponentspagebuilder.ui.dialogs.DuplicatePageDialog;
 import it.bz.opendatahub.webcomponentspagebuilder.ui.dialogs.DuplicatePageDialog.PageToDuplicate;
@@ -140,11 +140,10 @@ public class ManagePageView extends VerticalLayout implements HasUrlParameter<St
 					pageVersion.getUpdatedAt().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss"))))));
 			details.add(buttons);
 
-			Image image = new Image();
+			PageScreenshot image = new PageScreenshot();
 			image.setSrc(String.format("/pages/preview/%s.png?%s", pageVersion.getIdAsString(),
 					DigestUtils.md5Hex(StringUtils.join(pageVersion.getContents().stream().map(PageContent::getMarkup)
 							.collect(Collectors.toList())))));
-			image.setWidthFull();
 
 			VerticalLayout layout = new VerticalLayout();
 			layout.setPadding(false);
@@ -214,7 +213,7 @@ public class ManagePageView extends VerticalLayout implements HasUrlParameter<St
 					refresh();
 				});
 			});
-			
+
 			buttons.add(unpublishButton);
 
 			Button duplicateButton = new Button("DUPLICATE");
@@ -240,11 +239,10 @@ public class ManagePageView extends VerticalLayout implements HasUrlParameter<St
 					pageVersion.getUpdatedAt().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss"))))));
 			details.add(buttons);
 
-			Image image = new Image();
+			PageScreenshot image = new PageScreenshot();
 			image.setSrc(String.format("/pages/preview/%s.png?%s", pageVersion.getIdAsString(),
 					DigestUtils.md5Hex(StringUtils.join(pageVersion.getContents().stream().map(PageContent::getMarkup)
 							.collect(Collectors.toList())))));
-			image.setWidthFull();
 
 			VerticalLayout layout = new VerticalLayout();
 			layout.setPadding(false);
