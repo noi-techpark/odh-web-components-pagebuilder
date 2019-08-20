@@ -1,6 +1,5 @@
 package it.bz.opendatahub.webcomponentspagebuilder.ui.views;
 
-import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Optional;
 import java.util.UUID;
@@ -157,24 +156,7 @@ public class ManagePageView extends VerticalLayout implements HasUrlParameter<St
 		} else {
 			Button createButton = new Button("CREATE DRAFT");
 			createButton.addClickListener(e -> {
-				PageVersion draftVersion = new PageVersion();
-				draftVersion.setPage(page);
-				draftVersion.setHash(DigestUtils.sha1Hex(UUID.randomUUID().toString()));
-				draftVersion.setUpdatedAt(LocalDateTime.now());
-
-				if (page.getPublicVersion() != null) {
-					PageVersion publicVersion = page.getPublicVersion();
-
-					draftVersion.setTitle(publicVersion.getTitle());
-					draftVersion.setDescription(publicVersion.getDescription());
-					draftVersion.setContents(publicVersion.getContents().stream().map(pageContent -> {
-						PageContent copy = pageContent.copy();
-						copy.setPageVersion(draftVersion);
-						return copy;
-					}).collect(Collectors.toList()));
-				}
-
-				page.setDraftVersion(draftVersion);
+				page.setDraftVersion(publicationController.createDraft(page));
 
 				page = pagesRepo.save(page);
 
@@ -223,6 +205,17 @@ public class ManagePageView extends VerticalLayout implements HasUrlParameter<St
 
 				buttons.add(visitButton);
 			}
+
+			Button unpublishButton = new Button("UNPUBLISH");
+			unpublishButton.addClickListener(e -> {
+				publicationController.unpublish(pageVersion, (updatedPage) -> {
+					page = updatedPage;
+
+					refresh();
+				});
+			});
+			
+			buttons.add(unpublishButton);
 
 			Button duplicateButton = new Button("DUPLICATE");
 			duplicateButton.addClickListener(e -> {

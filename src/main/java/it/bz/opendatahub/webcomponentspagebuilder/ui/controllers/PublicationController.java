@@ -35,6 +35,11 @@ public class PublicationController {
 		public void discarded(Page page);
 	}
 
+	@FunctionalInterface
+	public static interface UnpublishHandler {
+		public void unpublished(Page page);
+	}
+
 	@Autowired
 	ApplicationContext applicationContext;
 
@@ -64,6 +69,27 @@ public class PublicationController {
 		}).collect(Collectors.toList()));
 
 		return versionsRepo.save(publishedVersion);
+	}
+
+	public PageVersion createDraft(Page page) {
+		PageVersion draftVersion = new PageVersion();
+		draftVersion.setPage(page);
+		draftVersion.setHash(DigestUtils.sha1Hex(UUID.randomUUID().toString()));
+		draftVersion.setUpdatedAt(LocalDateTime.now());
+
+		if (page.getPublicVersion() != null) {
+			PageVersion publicVersion = page.getPublicVersion();
+
+			draftVersion.setTitle(publicVersion.getTitle());
+			draftVersion.setDescription(publicVersion.getDescription());
+			draftVersion.setContents(publicVersion.getContents().stream().map(pageContent -> {
+				PageContent copy = pageContent.copy();
+				copy.setPageVersion(draftVersion);
+				return copy;
+			}).collect(Collectors.toList()));
+		}
+
+		return draftVersion;
 	}
 
 	public void publish(PageVersion pageVersion, PublishHandler handler) {
@@ -140,6 +166,36 @@ public class PublicationController {
 					handler.discarded(updatedPage);
 
 					Notification.show("Page draft discarded.");
+				}, "CANCEL", (dialogEvent) -> {
+					// noop
+				});
+
+		dialog.setConfirmButtonTheme("error primary");
+
+		dialog.open();
+	}
+
+	public void unpublish(PageVersion pageVersion, UnpublishHandler handler) {
+		Page page = pageVersion.getPage();
+
+		ConfirmDialog dialog = new ConfirmDialog("UNPUBLISH PAGE",
+				"Are you sure you want to unpublish this page? Afterwards the page won't be available to visitors anymore.",
+				"UNPUBLISH", (dialogEvent) -> {
+					page.setPublication(null);
+
+					Page updatedPage = pagesRepo.save(page);
+
+					if (updatedPage.getDraftVersion() == null) {
+						updatedPage.setDraftVersion(createDraft(page));
+					}
+
+					updatedPage.setPublicVersion(null);
+
+					updatedPage = pagesRepo.save(updatedPage);
+
+					handler.unpublished(updatedPage);
+
+					Notification.show("Page unpublished.");
 				}, "CANCEL", (dialogEvent) -> {
 					// noop
 				});
