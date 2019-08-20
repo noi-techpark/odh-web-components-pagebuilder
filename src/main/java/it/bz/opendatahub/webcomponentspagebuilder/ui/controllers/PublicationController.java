@@ -19,6 +19,7 @@ import it.bz.opendatahub.webcomponentspagebuilder.data.entities.PagePublicationS
 import it.bz.opendatahub.webcomponentspagebuilder.data.entities.PageVersion;
 import it.bz.opendatahub.webcomponentspagebuilder.data.repositories.PagePublicationRepository;
 import it.bz.opendatahub.webcomponentspagebuilder.data.repositories.PageRepository;
+import it.bz.opendatahub.webcomponentspagebuilder.data.repositories.PageVersionRepository;
 import it.bz.opendatahub.webcomponentspagebuilder.ui.dialogs.PublishPageVersionDialog;
 
 @Component
@@ -41,13 +42,14 @@ public class PublicationController {
 	PageRepository pagesRepo;
 
 	@Autowired
+	PageVersionRepository versionsRepo;
+
+	@Autowired
 	PagePublicationRepository publicationsRepo;
 
-	private Page publishPageVersion(PageVersion pageVersion) {
-		Page page = pageVersion.getPage();
-
+	private PageVersion publishPageVersion(PageVersion pageVersion) {
 		PageVersion publishedVersion = new PageVersion();
-		publishedVersion.setPage(page);
+		publishedVersion.setPage(pageVersion.getPage());
 		publishedVersion.setHash(DigestUtils.sha1Hex(UUID.randomUUID().toString()));
 		publishedVersion.setUpdatedAt(LocalDateTime.now());
 
@@ -61,10 +63,7 @@ public class PublicationController {
 			return copy;
 		}).collect(Collectors.toList()));
 
-		page.setDraftVersion(null);
-		page.setPublicVersion(publishedVersion);
-
-		return pagesRepo.save(page);
+		return versionsRepo.save(publishedVersion);
 	}
 
 	public void publish(PageVersion pageVersion, PublishHandler handler) {
@@ -74,11 +73,10 @@ public class PublicationController {
 			PublishPageVersionDialog dialog = applicationContext.getBean(PublishPageVersionDialog.class);
 
 			dialog.setConfirmHandler((configuration) -> {
-				Page updatedPage = publishPageVersion(pageVersion);
-				PageVersion publishedVersion = updatedPage.getPublicVersion();
+				PageVersion publishedVersion = publishPageVersion(pageVersion);
 
 				PagePublication pagePublication = new PagePublication();
-				pagePublication.setPage(updatedPage);
+				pagePublication.setPage(page);
 				pagePublication.setDeployedAt(LocalDateTime.now());
 				pagePublication.setStatus(PagePublicationStatus.COMPLETED);
 				pagePublication.setVersion(publishedVersion);
@@ -96,9 +94,11 @@ public class PublicationController {
 
 				pagePublication = publicationsRepo.save(pagePublication);
 
-				updatedPage.setPublication(pagePublication);
+				page.setDraftVersion(null);
+				page.setPublicVersion(publishedVersion);
+				page.setPublication(pagePublication);
 
-				updatedPage = pagesRepo.save(updatedPage);
+				Page updatedPage = pagesRepo.save(page);
 
 				handler.published(updatedPage, publishedVersion);
 
@@ -107,17 +107,20 @@ public class PublicationController {
 
 			dialog.open();
 		} else {
-			Page updatedPage = publishPageVersion(pageVersion);
-			PageVersion publishedVersion = updatedPage.getPublicVersion();
+			PageVersion publishedVersion = publishPageVersion(pageVersion);
 
-			PagePublication pagePublication = updatedPage.getPublication();
+			PagePublication pagePublication = page.getPublication();
 			pagePublication.setDeployedAt(LocalDateTime.now());
 			pagePublication.setStatus(PagePublicationStatus.COMPLETED);
 			pagePublication.setVersion(publishedVersion);
 
 			pagePublication = publicationsRepo.save(pagePublication);
 
-			updatedPage.setPublication(pagePublication);
+			page.setDraftVersion(null);
+			page.setPublicVersion(publishedVersion);
+			page.setPublication(pagePublication);
+
+			Page updatedPage = pagesRepo.save(page);
 
 			handler.published(updatedPage, publishedVersion);
 
