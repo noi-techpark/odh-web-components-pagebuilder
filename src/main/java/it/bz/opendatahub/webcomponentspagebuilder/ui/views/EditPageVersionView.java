@@ -1,6 +1,7 @@
 package it.bz.opendatahub.webcomponentspagebuilder.ui.views;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -9,16 +10,15 @@ import java.util.UUID;
 import javax.annotation.PostConstruct;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 
 import com.vaadin.flow.component.AttachEvent;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
-import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.dependency.HtmlImport;
 import com.vaadin.flow.component.html.Div;
-import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.tabs.Tab;
@@ -28,28 +28,35 @@ import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.data.binder.BinderValidationStatus;
 import com.vaadin.flow.router.BeforeEvent;
-import com.vaadin.flow.router.BeforeLeaveEvent;
-import com.vaadin.flow.router.BeforeLeaveEvent.ContinueNavigationAction;
-import com.vaadin.flow.router.BeforeLeaveObserver;
 import com.vaadin.flow.router.HasUrlParameter;
 import com.vaadin.flow.router.OptionalParameter;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouterLink;
 
-import it.bz.opendatahub.webcomponentspagebuilder.data.PageComponentsProvider;
+import it.bz.opendatahub.webcomponentspagebuilder.controllers.ComponentsController;
 import it.bz.opendatahub.webcomponentspagebuilder.data.entities.Page;
 import it.bz.opendatahub.webcomponentspagebuilder.data.entities.PageVersion;
 import it.bz.opendatahub.webcomponentspagebuilder.data.repositories.PageRepository;
 import it.bz.opendatahub.webcomponentspagebuilder.data.repositories.PageVersionRepository;
+import it.bz.opendatahub.webcomponentspagebuilder.events.PageVersionRemovedEvent;
+import it.bz.opendatahub.webcomponentspagebuilder.events.PageVersionUpdatedEvent;
 import it.bz.opendatahub.webcomponentspagebuilder.rendering.PageRenderer;
 import it.bz.opendatahub.webcomponentspagebuilder.ui.MainLayout;
-import it.bz.opendatahub.webcomponentspagebuilder.ui.components.PageContentCard;
+import it.bz.opendatahub.webcomponentspagebuilder.ui.components.PageComponentCard;
 import it.bz.opendatahub.webcomponentspagebuilder.ui.components.PageEditor;
-import it.bz.opendatahub.webcomponentspagebuilder.ui.controllers.PublicationController;
+import it.bz.opendatahub.webcomponentspagebuilder.ui.controllers.PublishingController;
 
+/**
+ * View for editing the contents (using drag-drop) and other related settings
+ * for a single page version.
+ * 
+ * @author danielrampanelli
+ */
 @Route(value = EditPageVersionView.ROUTE, layout = MainLayout.class)
 @HtmlImport("frontend://styles/shared-styles.html")
-public class EditPageVersionView extends VerticalLayout implements HasUrlParameter<String>, BeforeLeaveObserver {
+public class EditPageVersionView extends VerticalLayout implements HasUrlParameter<String> {
+
+	private static final int MINIMUM_VISIBLE_DURATION_OF_SAVE = 500;
 
 	private static final long serialVersionUID = 295988085457653174L;
 
@@ -59,7 +66,7 @@ public class EditPageVersionView extends VerticalLayout implements HasUrlParamet
 	PageRenderer pageRenderer;
 
 	@Autowired
-	PublicationController publicationController;
+	PublishingController publishingController;
 
 	@Autowired
 	PageRepository pagesRepo;
@@ -67,8 +74,11 @@ public class EditPageVersionView extends VerticalLayout implements HasUrlParamet
 	@Autowired
 	PageVersionRepository versionsRepo;
 
-	@Autowired(required = false)
-	PageComponentsProvider componentsProvider;
+	@Autowired
+	ComponentsController componentsController;
+
+	@Autowired
+	ApplicationEventPublisher eventPublisher;
 
 	private PageVersion pageVersion;
 
@@ -76,30 +86,15 @@ public class EditPageVersionView extends VerticalLayout implements HasUrlParamet
 
 	private Div availableComponents;
 
-	private RouterLink label;
+	private RouterLink pageTitle;
 
 	private Binder<PageVersion> binder;
 
+	private Div saveStatus;
+
 	@PostConstruct
 	private void postConstruct() {
-		label = new RouterLink();
-
-		Button saveButton = new Button("SAVE");
-		saveButton.addThemeVariants(ButtonVariant.LUMO_SUCCESS);
-		saveButton.addClickListener(e -> {
-			BinderValidationStatus<PageVersion> validation = binder.validate();
-			if (validation.isOk()) {
-				PageVersion bean = binder.getBean();
-				bean.setUpdatedAt(LocalDateTime.now());
-
-				pageVersion = versionsRepo.save(bean);
-
-				binder.setBean(pageVersion);
-				editor.setPage(pageVersion);
-
-				Notification.show("Page saved!");
-			}
-		});
+		pageTitle = new RouterLink();
 
 		Button previewButton = new Button("PREVIEW");
 		previewButton.addClickListener(e -> {
@@ -108,34 +103,85 @@ public class EditPageVersionView extends VerticalLayout implements HasUrlParamet
 		});
 
 		Button publishButton = new Button("PUBLISH");
+		publishButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
 		publishButton.addClickListener(e -> {
-			publicationController.publish(pageVersion, (updatedPage, updatedPageVersion) -> {
+			publishingController.publish(pageVersion, (updatedPage, updatedPageVersion) -> {
 				UI.getCurrent().navigate(ManagePageView.class, updatedPage.getIdAsString());
 			});
 		});
 
 		Button discardButton = new Button("DISCARD");
+		discardButton.addThemeVariants(ButtonVariant.LUMO_ERROR);
 		discardButton.addClickListener(e -> {
-			publicationController.discard(pageVersion, (updatedPage) -> {
+			publishingController.discard(pageVersion, (updatedPage) -> {
 				UI.getCurrent().navigate(ManagePageView.class, updatedPage.getIdAsString());
+
+				eventPublisher.publishEvent(new PageVersionRemovedEvent(pageVersion));
 			});
 		});
 
 		editor = new PageEditor();
 
-		Div labelWrapper = new Div(label);
-		labelWrapper.addClassName("contains-page-label");
+		editor.setUpdateHandler(() -> {
+			new Thread(() -> {
+				getUI().ifPresent(ui -> {
+					ui.access(() -> {
+						long time = -System.currentTimeMillis();
 
-		HorizontalLayout headerButtons = new HorizontalLayout(previewButton, saveButton, publishButton, discardButton);
+						saveStatus.setText("Saving...");
+
+						ui.push();
+
+						BinderValidationStatus<PageVersion> validation = binder.validate();
+						if (validation.isOk()) {
+							PageVersion bean = binder.getBean();
+							bean.setUpdatedAt(LocalDateTime.now());
+
+							pageVersion = versionsRepo.save(bean);
+
+							binder.setBean(pageVersion);
+							editor.setPageVersion(pageVersion);
+
+							eventPublisher.publishEvent(new PageVersionUpdatedEvent(pageVersion));
+						}
+
+						time += System.currentTimeMillis();
+
+						if (time < MINIMUM_VISIBLE_DURATION_OF_SAVE) {
+							try {
+								Thread.sleep(MINIMUM_VISIBLE_DURATION_OF_SAVE - time);
+							} catch (InterruptedException ee) {
+								// noop
+							}
+						}
+
+						saveStatus.setText(String.format("Saved on %s",
+								pageVersion.getUpdatedAt().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss"))));
+
+						ui.push();
+					});
+				});
+			}).start();
+		});
+
+		Div pageTitleWrapper = new Div(pageTitle);
+		pageTitleWrapper.addClassName("contains-page-title");
+
+		HorizontalLayout headerButtons = new HorizontalLayout(previewButton, publishButton, discardButton);
+
+		saveStatus = new Div();
+		saveStatus.addClassName("contains-page-save-status");
+
+		HorizontalLayout pageTitleAndStatus = new HorizontalLayout(pageTitleWrapper, saveStatus);
 
 		HorizontalLayout headerLayout = new HorizontalLayout();
 		headerLayout.addClassName("page-header");
 		headerLayout.setPadding(true);
 		headerLayout.setWidthFull();
 
-		headerLayout.add(labelWrapper);
+		headerLayout.add(pageTitleAndStatus);
 		headerLayout.add(headerButtons);
-		headerLayout.setFlexGrow(1, labelWrapper);
+		headerLayout.setFlexGrow(1, pageTitleAndStatus);
 		headerLayout.setFlexGrow(0, headerButtons);
 
 		Div editorWrapper = new Div();
@@ -148,11 +194,10 @@ public class EditPageVersionView extends VerticalLayout implements HasUrlParamet
 		availableComponents.addClassName("components");
 		availableComponents.setSizeFull();
 
-		if (componentsProvider != null) {
-			componentsProvider.getAvailableComponents().forEach(availableComponent -> {
-				availableComponents.add(new PageContentCard(availableComponent));
-			});
-		}
+		componentsController.getAll().stream().sorted((a, b) -> a.getTitle().compareTo(b.getTitle()))
+				.forEach(availableComponent -> {
+					availableComponents.add(new PageComponentCard(availableComponent));
+				});
 
 		HorizontalLayout contentLayout = new HorizontalLayout();
 		contentLayout.setPadding(false);
@@ -235,8 +280,8 @@ public class EditPageVersionView extends VerticalLayout implements HasUrlParamet
 
 		Page page = pageVersion.getPage();
 
-		label.setText(page.getLabel());
-		label.setRoute(getUI().get().getRouter(), ManagePageView.class, page.getIdAsString());
+		pageTitle.setText(page.getLabel());
+		pageTitle.setRoute(getUI().get().getRouter(), ManagePageView.class, page.getIdAsString());
 	}
 
 	private void bind(PageVersion pageVersionToBind) {
@@ -244,6 +289,9 @@ public class EditPageVersionView extends VerticalLayout implements HasUrlParamet
 
 		editor.bind(pageVersion);
 		binder.setBean(pageVersion);
+
+		saveStatus.setText(String.format("Saved on %s",
+				pageVersion.getUpdatedAt().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss"))));
 	}
 
 	@Override
@@ -255,23 +303,6 @@ public class EditPageVersionView extends VerticalLayout implements HasUrlParamet
 		} else {
 			// TODO show error message/label
 		}
-	}
-
-	@Override
-	public void beforeLeave(BeforeLeaveEvent event) {
-		ContinueNavigationAction action = event.postpone();
-
-		ConfirmDialog dialog = new ConfirmDialog("LEAVING SO SOON?",
-				"Are you sure you want to leave this page? Any unsaved change will be lost.", "LEAVE",
-				(dialogEvent) -> {
-					action.proceed();
-				}, "CANCEL", (dialogEvent) -> {
-					// noop
-				});
-
-		dialog.setConfirmButtonTheme("primary");
-
-		dialog.open();
 	}
 
 }

@@ -18,6 +18,13 @@ import javax.validation.constraints.NotNull;
 
 import org.springframework.data.jpa.convert.threeten.Jsr310JpaConverters;
 
+/**
+ * Entity that holds the actual contents of a page and which can be either a
+ * "draft" or a version that is currently deployed and accessible on the
+ * internet.
+ * 
+ * @author danielrampanelli
+ */
 @Entity
 @Table(name = "pagebuilder_page_version")
 public class PageVersion extends BaseEntity {

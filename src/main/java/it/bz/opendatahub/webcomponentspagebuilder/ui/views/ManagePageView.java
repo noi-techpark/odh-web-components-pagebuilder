@@ -11,12 +11,15 @@ import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationEventPublisher;
 
 import com.vaadin.flow.component.AttachEvent;
 import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.dependency.HtmlImport;
+import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
@@ -25,19 +28,25 @@ import com.vaadin.flow.router.BeforeEvent;
 import com.vaadin.flow.router.HasUrlParameter;
 import com.vaadin.flow.router.OptionalParameter;
 import com.vaadin.flow.router.Route;
-import com.vaadin.flow.router.RouterLink;
 
 import it.bz.opendatahub.webcomponentspagebuilder.data.entities.Page;
 import it.bz.opendatahub.webcomponentspagebuilder.data.entities.PageContent;
 import it.bz.opendatahub.webcomponentspagebuilder.data.entities.PageVersion;
 import it.bz.opendatahub.webcomponentspagebuilder.data.repositories.PageRepository;
+import it.bz.opendatahub.webcomponentspagebuilder.events.PageVersionRemovedEvent;
 import it.bz.opendatahub.webcomponentspagebuilder.rendering.PageRenderer;
 import it.bz.opendatahub.webcomponentspagebuilder.ui.MainLayout;
 import it.bz.opendatahub.webcomponentspagebuilder.ui.components.PageScreenshot;
-import it.bz.opendatahub.webcomponentspagebuilder.ui.controllers.PublicationController;
+import it.bz.opendatahub.webcomponentspagebuilder.ui.controllers.PublishingController;
 import it.bz.opendatahub.webcomponentspagebuilder.ui.dialogs.DuplicatePageDialog;
 import it.bz.opendatahub.webcomponentspagebuilder.ui.dialogs.DuplicatePageDialog.PageToDuplicate;
 
+/**
+ * View for managing the versions of a single page, allowing therefore to
+ * create, edit or remove draft and manage the publishing workflow.
+ * 
+ * @author danielrampanelli
+ */
 @Route(value = ManagePageView.ROUTE, layout = MainLayout.class)
 @HtmlImport("frontend://styles/shared-styles.html")
 public class ManagePageView extends VerticalLayout implements HasUrlParameter<String> {
@@ -50,17 +59,20 @@ public class ManagePageView extends VerticalLayout implements HasUrlParameter<St
 	ApplicationContext applicationContext;
 
 	@Autowired
+	ApplicationEventPublisher eventPublisher;
+
+	@Autowired
 	PageRenderer pageRenderer;
 
 	@Autowired
-	PublicationController publicationController;
+	PublishingController publishingController;
 
 	@Autowired
 	PageRepository pagesRepo;
 
 	private Page page;
 
-	private RouterLink label;
+	private Anchor pageTitle;
 
 	@PostConstruct
 	private void postConstruct() {
@@ -94,25 +106,36 @@ public class ManagePageView extends VerticalLayout implements HasUrlParameter<St
 				getUI().ifPresent(ui -> ui.navigate(EditPageVersionView.class, pageVersion.getIdAsString()));
 			});
 
+			editButton.setVisible(!page.getArchived());
+
 			Button publishButton = new Button("PUBLISH");
+			publishButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
 			publishButton.addClickListener(e -> {
-				publicationController.publish(pageVersion, (updatedPage, updatedPageVersion) -> {
+				publishingController.publish(pageVersion, (updatedPage, updatedPageVersion) -> {
 					page = updatedPage;
 
 					refresh();
 				});
 			});
+
+			publishButton.setVisible(!page.getArchived());
 
 			Button discardButton = new Button("DISCARD");
+			discardButton.addThemeVariants(ButtonVariant.LUMO_ERROR);
 			discardButton.addClickListener(e -> {
-				publicationController.discard(pageVersion, (updatedPage) -> {
+				publishingController.discard(pageVersion, (updatedPage) -> {
 					page = updatedPage;
 
 					refresh();
+
+					eventPublisher.publishEvent(new PageVersionRemovedEvent(pageVersion));
 				});
 			});
 
+			discardButton.setVisible(!page.getArchived());
+
 			Button duplicateButton = new Button("DUPLICATE");
+			duplicateButton.addThemeVariants(ButtonVariant.LUMO_SUCCESS);
 			duplicateButton.addClickListener(e -> {
 				DuplicatePageDialog dialog = applicationContext.getBean(DuplicatePageDialog.class);
 
@@ -154,8 +177,9 @@ public class ManagePageView extends VerticalLayout implements HasUrlParameter<St
 			contentLayout.add(layout);
 		} else {
 			Button createButton = new Button("CREATE DRAFT");
+			createButton.addThemeVariants(ButtonVariant.LUMO_SUCCESS);
 			createButton.addClickListener(e -> {
-				page.setDraftVersion(publicationController.createDraft(page));
+				page.setDraftVersion(publishingController.createDraft(page));
 
 				page = pagesRepo.save(page);
 
@@ -170,9 +194,13 @@ public class ManagePageView extends VerticalLayout implements HasUrlParameter<St
 			placeholder.setPadding(false);
 			placeholder.setSpacing(true);
 
-			placeholder.add(new Div(new Text(
-					"There's currently no page draft defined. You can create one from scratch or by starting from the most recent published version.")));
-			placeholder.add(createButton);
+			if (page.getArchived()) {
+				placeholder.add(new Div(new Text("There's no page draft defined.")));
+			} else {
+				placeholder.add(new Div(new Text(
+						"There's currently no page draft defined. You can create one from scratch or by starting from the most recent published version.")));
+				placeholder.add(createButton);
+			}
 
 			HorizontalLayout layout = new HorizontalLayout();
 			layout.addClassName("is-version-placeholder");
@@ -206,17 +234,23 @@ public class ManagePageView extends VerticalLayout implements HasUrlParameter<St
 			}
 
 			Button unpublishButton = new Button("UNPUBLISH");
+			unpublishButton.addThemeVariants(ButtonVariant.LUMO_ERROR);
 			unpublishButton.addClickListener(e -> {
-				publicationController.unpublish(pageVersion, (updatedPage) -> {
+				publishingController.unpublish(pageVersion, (updatedPage) -> {
 					page = updatedPage;
 
 					refresh();
+
+					eventPublisher.publishEvent(new PageVersionRemovedEvent(pageVersion));
 				});
 			});
+
+			unpublishButton.setVisible(!page.getArchived());
 
 			buttons.add(unpublishButton);
 
 			Button duplicateButton = new Button("DUPLICATE");
+			duplicateButton.addThemeVariants(ButtonVariant.LUMO_SUCCESS);
 			duplicateButton.addClickListener(e -> {
 				DuplicatePageDialog dialog = applicationContext.getBean(DuplicatePageDialog.class);
 
@@ -268,10 +302,10 @@ public class ManagePageView extends VerticalLayout implements HasUrlParameter<St
 			contentLayout.add(layout);
 		}
 
-		label = new RouterLink();
+		pageTitle = new Anchor();
 
-		Div labelWrapper = new Div(label);
-		labelWrapper.addClassName("contains-page-label");
+		Div labelWrapper = new Div(pageTitle);
+		labelWrapper.addClassName("contains-page-title");
 
 		HorizontalLayout headerLayout = new HorizontalLayout();
 		headerLayout.addClassName("page-header");
@@ -285,8 +319,7 @@ public class ManagePageView extends VerticalLayout implements HasUrlParameter<St
 	protected void onAttach(AttachEvent attachEvent) {
 		super.onAttach(attachEvent);
 
-		label.setText(page.getLabel());
-		label.setRoute(getUI().get().getRouter(), ManagePageView.class, page.getIdAsString());
+		pageTitle.setText(page.getLabel());
 	}
 
 	private void refresh() {

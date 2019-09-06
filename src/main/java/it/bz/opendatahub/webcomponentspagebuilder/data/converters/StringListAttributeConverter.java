@@ -11,6 +11,12 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+/**
+ * Converter component that will map a list of String objects to a JSON
+ * representation for persistence in a simple text-based database column.
+ * 
+ * @author danielrampanelli
+ */
 public class StringListAttributeConverter implements AttributeConverter<List<String>, String> {
 
 	private final static ObjectMapper objectMapper = new ObjectMapper();

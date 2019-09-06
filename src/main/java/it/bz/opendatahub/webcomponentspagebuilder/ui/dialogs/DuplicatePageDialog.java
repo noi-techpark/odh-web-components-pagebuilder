@@ -31,6 +31,12 @@ import it.bz.opendatahub.webcomponentspagebuilder.data.entities.PageContent;
 import it.bz.opendatahub.webcomponentspagebuilder.data.entities.PageVersion;
 import it.bz.opendatahub.webcomponentspagebuilder.data.repositories.PageRepository;
 
+/**
+ * Dialog used for the definition of the settings that will be applied to a
+ * duplicate of another page.
+ * 
+ * @author danielrampanelli
+ */
 @Scope("prototype")
 @SpringComponent
 public class DuplicatePageDialog extends Dialog {

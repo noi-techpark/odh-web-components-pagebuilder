@@ -20,6 +20,13 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.authentication.SavedRequestAwareAuthenticationSuccessHandler;
 
+/**
+ * Configuration of the application's security, which makes sure that the
+ * correct routes are "protected" while others are open to anyone and that
+ * contains the settings with which users can authenticate themself.
+ * 
+ * @author danielrampanelli
+ */
 @EnableWebSecurity
 @EnableGlobalMethodSecurity(prePostEnabled = true)
 @Configuration
@@ -34,7 +41,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 	}
 
 	@Bean
-	public UserDetailsService userDetailsSerivce() {
+	public UserDetailsService userDetailsService() {
 		return new UserDetailsService() {
 			@Override
 			public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
@@ -55,8 +62,8 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 	}
 
 	@Bean
-	public CustomHttpSessionRequestCache requestCache() {
-		return new CustomHttpSessionRequestCache();
+	public LastRequestHttpSessionRequestCache requestCache() {
+		return new LastRequestHttpSessionRequestCache();
 	}
 
 	@Autowired
@@ -67,7 +74,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 
 	@Override
 	protected void configure(HttpSecurity http) throws Exception {
-		http.csrf().disable().requestCache().requestCache(new CustomHttpSessionRequestCache()).and().headers()
+		http.csrf().disable().requestCache().requestCache(new LastRequestHttpSessionRequestCache()).and().headers()
 				.frameOptions().disable().and().authorizeRequests()
 				.requestMatchers(SecurityUtils::isFrameworkInternalRequest).permitAll().anyRequest()
 				.hasAnyAuthority(new String[] { "user" }).and().formLogin().loginPage("/login").permitAll()

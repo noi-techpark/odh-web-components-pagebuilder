@@ -2,6 +2,7 @@ package it.bz.opendatahub.webcomponentspagebuilder.data.entities;
 
 import java.time.LocalDateTime;
 
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Convert;
 import javax.persistence.Entity;
@@ -15,11 +16,17 @@ import javax.validation.constraints.NotNull;
 
 import org.springframework.data.jpa.convert.threeten.Jsr310JpaConverters;
 
+/**
+ * Entity for the definition of the publication of a page (actually a specific
+ * {@link PageVersion}).
+ * 
+ * @author danielrampanelli
+ */
 @Entity
 @Table(name = "pagebuilder_page_publication")
 public class PagePublication extends BaseEntity {
 
-	@OneToOne(fetch = FetchType.EAGER, mappedBy = "publication")
+	@OneToOne(fetch = FetchType.EAGER, mappedBy = "publication", cascade = { CascadeType.REFRESH })
 	private Page page;
 
 	@Column(name = "domain_name")
@@ -42,7 +49,7 @@ public class PagePublication extends BaseEntity {
 	@NotNull
 	private LocalDateTime deployedAt;
 
-	@OneToOne(fetch = FetchType.EAGER)
+	@OneToOne(fetch = FetchType.EAGER, cascade = { CascadeType.REFRESH })
 	@JoinColumn(name = "version_id")
 	@NotNull
 	private PageVersion version;

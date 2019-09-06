@@ -3,6 +3,11 @@ package it.bz.opendatahub.webcomponentspagebuilder.rendering.screenshots;
 import org.openqa.selenium.OutputType;
 import org.openqa.selenium.remote.RemoteWebDriver;
 
+/**
+ * Screenshot renderer component based on a WebDriver implementation.
+ * 
+ * @author danielrampanelli
+ */
 public abstract class WebDriverScreenshotRenderer implements ScreenshotRenderer {
 
 	private String driverPath;

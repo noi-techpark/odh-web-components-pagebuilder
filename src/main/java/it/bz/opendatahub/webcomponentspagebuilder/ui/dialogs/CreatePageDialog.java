@@ -28,6 +28,12 @@ import it.bz.opendatahub.webcomponentspagebuilder.data.entities.Page;
 import it.bz.opendatahub.webcomponentspagebuilder.data.entities.PageVersion;
 import it.bz.opendatahub.webcomponentspagebuilder.data.repositories.PageRepository;
 
+/**
+ * Dialog for managing the settings (label, title and description) of a new page
+ * to be created.
+ * 
+ * @author danielrampanelli
+ */
 @Scope("prototype")
 @SpringComponent
 public class CreatePageDialog extends Dialog {

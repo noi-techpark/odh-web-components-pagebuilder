@@ -1,22 +1,38 @@
 package it.bz.opendatahub.webcomponentspagebuilder.data;
 
+import java.util.LinkedList;
+import java.util.List;
+
 /**
- * Represents a web component based on a single asset file that can be included on a page
+ * Represents a web component, based one or multiple asset files, that can be
+ * included on a page.
+ * 
+ * @author danielrampanelli
  */
 public class PageComponent {
+
+	private String uid;
 
 	private String title;
 
 	private String description;
 
-	private String tag;
+	private String tagName;
 
-	private String assetUrl;
+	private List<String> assets = new LinkedList<>();
 
 	private String defaultMarkup;
 
 	public PageComponent() {
 
+	}
+
+	public String getUid() {
+		return uid;
+	}
+
+	public void setUid(String uid) {
+		this.uid = uid;
 	}
 
 	public String getTitle() {
@@ -35,20 +51,24 @@ public class PageComponent {
 		this.description = description;
 	}
 
-	public String getTag() {
-		return tag;
+	public String getTagName() {
+		return tagName;
 	}
 
-	public void setTag(String tag) {
-		this.tag = tag;
+	public void setTagName(String tagName) {
+		this.tagName = tagName;
 	}
 
-	public String getAssetUrl() {
-		return assetUrl;
+	public List<String> getAssets() {
+		return assets;
 	}
 
-	public void setAssetUrl(String assetUrl) {
-		this.assetUrl = assetUrl;
+	public void setAssets(List<String> assets) {
+		this.assets = assets;
+	}
+
+	public void addAsset(String asset) {
+		getAssets().add(asset);
 	}
 
 	public String getDefaultMarkup() {
@@ -57,6 +77,24 @@ public class PageComponent {
 
 	public void setDefaultMarkup(String defaultMarkup) {
 		this.defaultMarkup = defaultMarkup;
+	}
+
+	@Override
+	public boolean equals(Object o) {
+		if (this == o) {
+			return true;
+		}
+
+		if (o == null || getClass() != o.getClass()) {
+			return false;
+		}
+
+		return uid.equals(((PageComponent) o).uid);
+	}
+
+	@Override
+	public int hashCode() {
+		return uid.hashCode();
 	}
 
 }

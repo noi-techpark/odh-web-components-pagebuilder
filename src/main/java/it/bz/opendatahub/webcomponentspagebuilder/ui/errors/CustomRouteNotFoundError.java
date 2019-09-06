@@ -9,10 +9,19 @@ import com.vaadin.flow.dom.ElementFactory;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.ErrorParameter;
 import com.vaadin.flow.router.NotFoundException;
+import com.vaadin.flow.router.ParentLayout;
 import com.vaadin.flow.router.RouteNotFoundError;
 import com.vaadin.flow.router.RouterLink;
 
-// TODO @ParentLayout(MainView.class)
+import it.bz.opendatahub.webcomponentspagebuilder.ui.MainLayout;
+
+/**
+ * View that will be triggered when trying to access a route that is not mapped
+ * to any views.
+ * 
+ * @author danielrampanelli
+ */
+@ParentLayout(MainLayout.class)
 @HtmlImport("styles/shared-styles.html")
 public class CustomRouteNotFoundError extends RouteNotFoundError {
 

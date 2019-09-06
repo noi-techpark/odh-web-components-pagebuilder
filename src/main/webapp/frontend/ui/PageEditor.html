@@ -4,6 +4,8 @@
 			iframe {
 				border: 0;
 				height: 100%;
+				margin: 0 auto;
+				max-width: 1600px;
 				width: 100%;
 			}
 		</style>
@@ -212,7 +214,7 @@
             	}
             }
             
-            insertContent(uuid, assets, tag, markup, before) {
+            insertContent(uuid, markup, assets, before) {
             	var self = this;
             	
             	var document = this.shadowRoot.querySelector('iframe').contentWindow.document;
@@ -384,7 +386,7 @@
                         if (!!componentToInsert) {
                             var unwrappedComponent = JSON.parse(componentToInsert);
                             
-                            self.$server.droppedContent(unwrappedComponent.assets, unwrappedComponent.tag, unwrappedComponent.markup, insertBefore);
+                            self.$server.droppedContent(unwrappedComponent.uid, unwrappedComponent.tag, unwrappedComponent.markup, unwrappedComponent.assets, insertBefore);
                         }
                         
                         var componentToMove = e.dataTransfer.getData('componentToMove');

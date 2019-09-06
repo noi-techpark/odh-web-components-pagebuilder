@@ -16,6 +16,12 @@ import freemarker.template.TemplateException;
 import freemarker.template.TemplateNotFoundException;
 import it.bz.opendatahub.webcomponentspagebuilder.data.entities.PageVersion;
 
+/**
+ * Component for rendering a page version into an actual HTML document/page, by
+ * rendering all contents and injecting all related assets.
+ * 
+ * @author danielrampanelli
+ */
 @Component
 public class PageRenderer {
 

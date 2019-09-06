@@ -21,8 +21,37 @@ To build the project, the following prerequisites must be met:
 
 - Java JDK 1.8 or higher (e.g. [OpenJDK](https://openjdk.java.net/))
 - [Maven](https://maven.apache.org/) 3.x
+- PostgreSQL
+- Suitable Browser/WebDriver
+- AWS Account
 
 For a ready to use Docker environment with all prerequisites already installed and prepared, you can check out the [Docker environment](#docker-environment) section.
+
+### Setup Browser/WebDriver
+
+The application uses automated versions of browsers to render the pages and show a preview screenshot to users. Currently, it is possible to use Chrome/Chromium or Firefox for this task.
+
+If not configured differently, the application expects to find Chrome/Chromium and ChromeDriver installed on the default system paths.
+
+Here is a list of resources on how to install Chrome/Chromium and ChromeDriver on different platforms:
+
+* Ubuntu: [https://gist.github.com/ziadoz/3e8ab7e944d02fe872c3454d17af31a5](https://gist.github.com/ziadoz/3e8ab7e944d02fe872c3454d17af31a5)
+* Mac: [https://www.kenst.com/2015/03/installing-chromedriver-on-mac-osx/](https://www.kenst.com/2015/03/installing-chromedriver-on-mac-osx/)
+
+Alternatively, you can also install and use Firefox and GeckoDriver:
+
+* Ubuntu: [https://medium.com/@sonaldwivedi/downloading-and-setting-up-geckodriver-87873e25207c](https://medium.com/@sonaldwivedi/downloading-and-setting-up-geckodriver-87873e25207c)
+* Mac: [https://medium.com/@deepankosingha/how-to-install-geckodriver-on-ubuntu-94b2075b5ad3](https://medium.com/@deepankosingha/how-to-install-geckodriver-on-ubuntu-94b2075b5ad3)
+
+If you have installed the executables in different locations or you want to use Firefox/Gecko, you'll need to provide a different `@Bean` definition in the source code (see the [Configuration](#configuration) section).
+
+### Setup AWS
+
+The application will use the resources provided by AWS to deploy the composed pages. It is highly advisable to create a separate user (instead of the primary credentials of your AWS account) with at least the following policies:
+
+* AmazonS3FullAccess
+
+See the [Configuration](#configuration) section on how to specify the user's access key and secret.
 
 ### Source code
 
@@ -40,51 +69,58 @@ cd odh-web-components-pagebuilder/
 
 ### Configuration
 
-The application needs a couple of environment/deployment specific configurations and components in order to run correctly. These can be configured in form of Spring beans and can be defined in the project using a separate annotation-based configuration (in a source file that will be detected by the application context), like the following
+The application expects the following configuration options to be set, which can be provided to the application by various methods depending on how the application is packaged and deployed.
+
+* application.database.url (JDBC url to PostgreSQL database)
+* application.database.username (database username)
+* application.database.password (database password)
+* application.aws.region (AWS region identifier)
+* application.aws.access-key (AWS user access key)
+* application.aws.access-secret (AWS user access secret)
+
+The following is an example configuration file
+
+```ini
+application.database.url = jdbc:postgresql://localhost:5432/pagebuilder
+application.database.username = pagebuilder
+application.database.password = s3cret
+application.aws.region = eu-west-1
+application.aws.access-key = ABCDEF123
+application.aws.access-secret = s3cret
+```
+
+These values can be specified directly in the `application.properties` present in the application's source code or by using an additional configuration file that will be merged together with the one already provided (see following instructions on how to do that for the two packaging scenarios).
+
+If you choose to package and run the application as a single JAR executable, then you can specify the path of a custom properties configuration file using the following command line parameter
+
+```bash
+-Dspring.config.additional-location=/path/to/custom-application.properties
+```
+
+When you package the application as WAR for deployment on Tomcat, you can specify the custom properties file using the following statement (inside the bootstrap flow of the servlet container)
+
+```bash
+export CATALINA_OPTS="${CATALINA_OPTS} -Dspring.config.additional-location=file:/path/to/custom-application.properties"
+```
+
+Moreover, it is also possible and **not mandatory** to override and alter the default set of Spring `@Bean` components by creating a dedicated Java class with the `@Configuration` annotation.
+
+In the following example we have installed Chrome/ChromeDriver in custom locations and we run the application under a different domain/host name.
 
 ```java
 @Configuration
-public class LocalConfiguration {
-
-    @Bean(destroyMethod = "close")
-    public DataSource dataSource(Environment env) {
-        HikariConfig config = new HikariConfig();
-        config.setDriverClassName("org.postgresql.Driver");
-        config.setJdbcUrl("jdbc:postgresql://localhost:5432/pagebuilder");
-        config.setUsername("pagebuilder");
-        config.setPassword("s3cret");
-        return new HikariDataSource(config);
+public class CustomConfiguration {
+    
+    @Bean
+    @Primary
+    public ScreenshotRenderer customScreenshotRenderer() {
+        return new ChromeWebDriverScreenshotRenderer("/opt/bin/chromedriver", "/opt/bin/chrome");
     }
     
     @Bean
-    public DomainsProvider domains() {
-        DefaultDomainsProvider provider = new DefaultDomainsProvider();
-        
-        // TODO define available domains (hostname + allow subdomains)
-        provider.add("opendatahub.bz.it", false);
-        
-        return provider;
-    }
-    
-    @Bean
-    public PageComponentsProvider components() {
-        PageComponentsDefaultProvider provider = new PageComponentsDefaultProvider();
-
-        // TODO define available components
-        provider.add(
-            "Example Component",
-            "This is just an example component.",
-            "https://example.com/webcomps/dist/example.min.js",
-            "example-webcomp",
-            "<example-webcomp title="..." background="..."></example-webcomp>"
-        );
-        
-        return provider;
-    }
-    
-    @Bean
-    public ScreenshotRenderer screenshotRenderer() {
-        return new ChromeWebDriverScreenshotRenderer("/path/to/driver", "/path/to/browser");
+    @Primary
+    public ApplicationDeployment customDeployment() {
+        return new ApplicationDeployment("http://alternative-pagebuilder.testingmachine.eu");
     }
 
 }
@@ -128,9 +164,7 @@ The application can be deployed by running the packaged runnable JAR file on the
 java -jar -Dserver.port=80 path/to/odh-web-components-pagebuilder-[VERSION].jar
 ```
 
-If you have chosen to build the WAR file instead, deploy the generated `ROOT.war` file in the servlet container (preferably Apache Tomcat).
-
-In order to render the page screenshot/preview images correctly, you have to ensure that the configured `ScreenshotRenderer` has access to all required binaries.
+If you have chosen to build the WAR file instead, deploy the generated `odh-web-components-pagebuilder-[VERSION].war` file in the servlet container (preferably Apache Tomcat) using the `/` (root) context path.
 
 ## Docker environment
 

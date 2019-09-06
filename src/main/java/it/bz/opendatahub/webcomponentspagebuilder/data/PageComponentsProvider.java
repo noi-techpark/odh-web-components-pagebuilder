@@ -3,7 +3,10 @@ package it.bz.opendatahub.webcomponentspagebuilder.data;
 import java.util.List;
 
 /**
- * Provides the list of currently available web components that can be placed on a page
+ * Provides the list of currently available web components that can be placed on
+ * a page.
+ * 
+ * @author danielrampanelli
  */
 public interface PageComponentsProvider {
 

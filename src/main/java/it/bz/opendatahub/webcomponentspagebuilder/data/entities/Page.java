@@ -9,6 +9,12 @@ import javax.persistence.OneToOne;
 import javax.persistence.Table;
 import javax.validation.constraints.NotNull;
 
+/**
+ * Entity acting as a container for different {@link PageVersion} entities,
+ * currently modelled as a "draft" and "public" version.
+ * 
+ * @author danielrampanelli
+ */
 @Entity
 @Table(name = "pagebuilder_page")
 public class Page extends BaseEntity {

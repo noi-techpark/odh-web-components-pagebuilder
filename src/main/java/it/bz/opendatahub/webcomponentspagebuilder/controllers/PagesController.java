@@ -18,30 +18,37 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import freemarker.template.TemplateException;
+import it.bz.opendatahub.webcomponentspagebuilder.controllers.ScreenshotsController.ScreenshotRenderingInProgressException;
 import it.bz.opendatahub.webcomponentspagebuilder.data.entities.PageVersion;
 import it.bz.opendatahub.webcomponentspagebuilder.data.repositories.PageVersionRepository;
 import it.bz.opendatahub.webcomponentspagebuilder.rendering.PageRenderer;
-import it.bz.opendatahub.webcomponentspagebuilder.rendering.screenshots.ScreenshotRenderer;
 
+/**
+ * REST controller that allows access to various views and representations of
+ * page versions. Exposes the rendered HTML preview as well as a screenshot of a
+ * page version.
+ * 
+ * @author danielrampanelli
+ */
 @RestController
 public class PagesController {
 
 	@Autowired
 	PageVersionRepository versionsRepo;
 
-	@Autowired(required = false)
-	ScreenshotRenderer screenshotRenderer;
+	@Autowired
+	ScreenshotsController screenshotController;
 
 	@Autowired
 	PageRenderer pageRenderer;
 
 	@RequestMapping("/pages/page-editor/{uuid}.html")
 	public ResponseEntity<String> editablePage(HttpServletRequest request, @PathVariable("uuid") String uuid) {
-		Optional<PageVersion> page = versionsRepo.findById(UUID.fromString(uuid));
+		Optional<PageVersion> pageVersion = versionsRepo.findById(UUID.fromString(uuid));
 
-		if (page.isPresent()) {
+		if (pageVersion.isPresent()) {
 			try {
-				String html = pageRenderer.renderPage(page.get());
+				String html = pageRenderer.renderPage(pageVersion.get());
 
 				html = html
 						.replaceAll("</head>",
@@ -62,36 +69,48 @@ public class PagesController {
 	}
 
 	@RequestMapping("/pages/preview/{uuid}.png")
-	public ResponseEntity<byte[]> previewPageAsScreenshot(HttpServletRequest request,
-			@PathVariable("uuid") String uuid) {
-		Optional<PageVersion> page = versionsRepo.findById(UUID.fromString(uuid));
+	public ResponseEntity<byte[]> previewPageAsScreenshot(@PathVariable("uuid") String uuid) {
+		Optional<PageVersion> pageVersion = versionsRepo.findById(UUID.fromString(uuid));
 
-		if (page.isPresent()) {
-			if (screenshotRenderer == null) {
-				return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+		if (pageVersion.isPresent()) {
+			int attempts = 0;
+
+			while (attempts++ <= 120) {
+				try {
+					byte[] screenshot = screenshotController.get(pageVersion.get());
+
+					if (screenshot == null) {
+						return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+					}
+
+					HttpHeaders headers = new HttpHeaders();
+					headers.setContentType(MediaType.IMAGE_PNG);
+
+					return new ResponseEntity<>(screenshot, headers, HttpStatus.OK);
+				} catch (ScreenshotRenderingInProgressException e) {
+					try {
+						Thread.sleep(500);
+					} catch (InterruptedException ee) {
+						// noop
+					}
+				}
 			}
-
-			String url = String.format("%s://%s:%d/pages/preview/%s", request.getScheme(), request.getServerName(),
-					request.getServerPort(), page.get().getHash());
-
-			HttpHeaders headers = new HttpHeaders();
-			headers.setContentType(MediaType.IMAGE_PNG);
-
-			byte[] screenshot = screenshotRenderer.renderScreenshot(url);
-
-			return new ResponseEntity<>(screenshot, headers, HttpStatus.OK);
 		}
 
 		return new ResponseEntity<>(HttpStatus.NOT_FOUND);
 	}
 
-	@RequestMapping("/pages/preview/{hash}")
-	public ResponseEntity<String> previewPage(@PathVariable("hash") String hash) {
-		Optional<PageVersion> page = versionsRepo.findByHash(hash);
+	@RequestMapping("/pages/preview/{hashOrUuid}")
+	public ResponseEntity<String> previewPage(@PathVariable("hashOrUuid") String hashOrUuid) {
+		Optional<PageVersion> pageVersion = versionsRepo.findByHash(hashOrUuid);
 
-		if (page.isPresent()) {
+		if (!pageVersion.isPresent()) {
+			pageVersion = versionsRepo.findById(UUID.fromString(hashOrUuid));
+		}
+
+		if (pageVersion.isPresent()) {
 			try {
-				return ResponseEntity.ok(pageRenderer.renderPage(page.get()));
+				return ResponseEntity.ok(pageRenderer.renderPage(pageVersion.get()));
 			} catch (IOException | TemplateException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();

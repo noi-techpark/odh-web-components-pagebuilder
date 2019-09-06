@@ -13,11 +13,14 @@ import com.vaadin.flow.component.page.Viewport;
 import com.vaadin.flow.server.PWA;
 
 import it.bz.opendatahub.webcomponentspagebuilder.security.SecurityUtils;
+import it.bz.opendatahub.webcomponentspagebuilder.ui.views.ArchiveView;
 import it.bz.opendatahub.webcomponentspagebuilder.ui.views.PagesView;
 
 /**
- * Main UI of the page builder providing the page "canvas" and the tools for
- * creating or managing the web components
+ * Main layout of the application composed of a navigation bar and the content
+ * of the currently active view.
+ * 
+ * @author danielrampanelli
  */
 @PWA(name = "OpenDataHub Web Components Page Builder", shortName = "Page Builder", startPath = "login")
 @HtmlImport("frontend://styles/shared-styles.html")
@@ -32,6 +35,8 @@ public class MainLayout extends AbstractAppRouterLayout {
 
 		if (SecurityUtils.isUserLoggedIn()) {
 			addMenuItem(menu, new AppLayoutMenuItem(VaadinIcon.FORM.create(), "PAGES", PagesView.ROUTE));
+
+			addMenuItem(menu, new AppLayoutMenuItem(VaadinIcon.ARCHIVE.create(), "ARCHIVE", ArchiveView.ROUTE));
 
 //			if (SecurityUtils.isAccessGranted(UsersView.class)) {
 //				addMenuItem(menu, new AppLayoutMenuItem(VaadinIcon.USER.create(), TITLE_USERS, PAGE_USERS));

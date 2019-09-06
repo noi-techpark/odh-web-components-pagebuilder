@@ -17,9 +17,14 @@ import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.Route;
 
-import it.bz.opendatahub.webcomponentspagebuilder.security.CustomHttpSessionRequestCache;
+import it.bz.opendatahub.webcomponentspagebuilder.security.LastRequestHttpSessionRequestCache;
 import it.bz.opendatahub.webcomponentspagebuilder.security.SecurityUtils;
 
+/**
+ * View for username/password-based authentication to the application.
+ * 
+ * @author danielrampanelli
+ */
 @Route(value = LoginView.ROUTE)
 @Viewport("width=device-width, minimum-scale=1, initial-scale=1, user-scalable=yes")
 public class LoginView extends LoginOverlay implements AfterNavigationObserver, BeforeEnterObserver {
@@ -29,7 +34,7 @@ public class LoginView extends LoginOverlay implements AfterNavigationObserver, 
 	public static final String ROUTE = "login";
 
 	@Autowired
-	public LoginView(AuthenticationManager authenticationManager, CustomHttpSessionRequestCache requestCache) {
+	public LoginView(AuthenticationManager authenticationManager, LastRequestHttpSessionRequestCache requestCache) {
 		LoginI18n i18n = LoginI18n.createDefault();
 		i18n.setHeader(new LoginI18n.Header());
 		i18n.getHeader().setTitle("OPENDATAHUB PAGE BUILDER");
