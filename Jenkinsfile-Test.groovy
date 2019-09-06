@@ -31,6 +31,9 @@ import it.bz.opendatahub.webcomponentspagebuilder.data.DomainsProvider;
 import it.bz.opendatahub.webcomponentspagebuilder.data.PageComponentsDefaultProvider;
 import it.bz.opendatahub.webcomponentspagebuilder.data.PageComponentsProvider;
 
+import it.bz.opendatahub.webcomponentspagebuilder.rendering.screenshots.ChromeWebDriverScreenshotRenderer;
+import it.bz.opendatahub.webcomponentspagebuilder.rendering.screenshots.ScreenshotRenderer;
+
 @Configuration
 public class LocalConfiguration {
 
@@ -73,6 +76,11 @@ public class LocalConfiguration {
 
 		return provider;
 	}
+
+    @Bean
+    public ScreenshotRenderer screenshotRenderer() {
+        return new ChromeWebDriverScreenshotRenderer();
+    }
 
 }
         """
