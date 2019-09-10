@@ -13,77 +13,6 @@ pipeline {
         POSTGRES_URL = "jdbc:postgresql://test-pg-bdp.co90ybcr8iim.eu-west-1.rds.amazonaws.com:5432/webcompbuilder"
         POSTGRES_USERNAME = credentials('pagebuilder-test-postgres-username')
         POSTGRES_PASSWORD = credentials('pagebuilder-test-postgres-password')
-
-        LOCAL_CONFIGURATION = """
-package it.bz.opendatahub.webcomponentspagebuilder;
-
-import javax.sql.DataSource;
-
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.core.env.Environment;
-
-import com.zaxxer.hikari.HikariConfig;
-import com.zaxxer.hikari.HikariDataSource;
-
-import it.bz.opendatahub.webcomponentspagebuilder.data.DefaultDomainsProvider;
-import it.bz.opendatahub.webcomponentspagebuilder.data.DomainsProvider;
-import it.bz.opendatahub.webcomponentspagebuilder.data.PageComponentsDefaultProvider;
-import it.bz.opendatahub.webcomponentspagebuilder.data.PageComponentsProvider;
-
-import it.bz.opendatahub.webcomponentspagebuilder.rendering.screenshots.ChromeWebDriverScreenshotRenderer;
-import it.bz.opendatahub.webcomponentspagebuilder.rendering.screenshots.ScreenshotRenderer;
-
-@Configuration
-public class LocalConfiguration {
-
-    @Bean(destroyMethod = "close")
-    public DataSource dataSource(Environment env) {
-        HikariConfig config = new HikariConfig();
-        config.setDriverClassName("org.postgresql.Driver");
-        config.setJdbcUrl("${POSTGRES_URL}");
-        config.setUsername("${POSTGRES_USERNAME}");
-        config.setPassword("${POSTGRES_PASSWORD}");
-        return new HikariDataSource(config);
-    }
-    
-	@Bean
-	public DomainsProvider domains() {
-		DefaultDomainsProvider provider = new DefaultDomainsProvider();
-		provider.add("suedtirol.info", true);
-		provider.add("opendatahub.bz.it", false);
-		return provider;
-	}
-    
-	@Bean
-	public PageComponentsProvider components() {
-		PageComponentsDefaultProvider provider = new PageComponentsDefaultProvider();
-
-		provider.add("Header", "Introduction element with image/title.",
-				"https://danielrampanelli.com/webcomps/odh-samples-header.js", "odh-samples-header",
-				"<odh-samples-header></odh-samples-header>");
-
-		provider.add("Texts", "Some text paragraphs.", "https://danielrampanelli.com/webcomps/odh-samples-text.js",
-				"odh-samples-text", "<odh-samples-text></odh-samples-text>");
-
-		provider.add("Weather", "Show the current weather for the region.",
-				"https://danielrampanelli.com/webcomps/odh-samples-weather.js", "odh-samples-weather",
-				"<odh-samples-weather></odh-samples-weather>");
-
-		provider.add("Beacons Map/Table", "Show all the beacons in South Tyrol as a map or table.",
-				"https://danielrampanelli.com/webcomps/beacons-map-table.min.js", "beacons-map-table",
-				"<beacons-map-table view=\\"all\\" search></beacons-map-table>");
-
-		return provider;
-	}
-
-    @Bean
-    public ScreenshotRenderer screenshotRenderer() {
-        return new ChromeWebDriverScreenshotRenderer();
-    }
-
-}
-        """
     }
 
     stages {
@@ -94,8 +23,6 @@ public class LocalConfiguration {
                 sh 'echo "        ${TESTSERVER_TOMCAT_CREDENTIALS}" >> ~/.m2/settings.xml'
                 sh 'echo "    </servers>" >> ~/.m2/settings.xml'
                 sh 'echo "</settings>" >> ~/.m2/settings.xml'
-
-                sh 'echo "${LOCAL_CONFIGURATION}" > src/main/java/it/bz/opendatahub/webcomponentspagebuilder/LocalConfiguration.java'
             }
         }
         stage('Test') {
