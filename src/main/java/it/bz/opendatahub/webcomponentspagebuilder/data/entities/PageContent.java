@@ -2,6 +2,7 @@ package it.bz.opendatahub.webcomponentspagebuilder.data.entities;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.UUID;
 
 import javax.persistence.Column;
 import javax.persistence.Convert;
@@ -14,6 +15,12 @@ import javax.validation.constraints.NotNull;
 
 import it.bz.opendatahub.webcomponentspagebuilder.data.converters.StringListAttributeConverter;
 
+/**
+ * Entity representing a web component placed on a {@link PageVersion} at a
+ * defined position of the content.
+ * 
+ * @author danielrampanelli
+ */
 @Entity
 @Table(name = "pagebuilder_page_content")
 public class PageContent extends BaseEntity {
@@ -21,6 +28,14 @@ public class PageContent extends BaseEntity {
 	@ManyToOne(fetch = FetchType.EAGER)
 	@JoinColumn(name = "page_version_id")
 	private PageVersion pageVersion;
+
+	@Column(name = "uid")
+	@NotNull
+	private String uid;
+
+	@Column(name = "content_id")
+	@NotNull
+	private UUID contentID;
 
 	@Column(name = "tag_name")
 	@NotNull
@@ -49,6 +64,22 @@ public class PageContent extends BaseEntity {
 
 	public void setPageVersion(PageVersion pageVersion) {
 		this.pageVersion = pageVersion;
+	}
+
+	public String getUid() {
+		return uid;
+	}
+
+	public void setUid(String uid) {
+		this.uid = uid;
+	}
+
+	public UUID getContentID() {
+		return contentID;
+	}
+
+	public void setContentID(UUID contentID) {
+		this.contentID = contentID;
 	}
 
 	public String getTagName() {

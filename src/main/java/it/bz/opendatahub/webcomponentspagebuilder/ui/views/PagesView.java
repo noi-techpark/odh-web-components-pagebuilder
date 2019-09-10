@@ -21,6 +21,11 @@ import it.bz.opendatahub.webcomponentspagebuilder.data.repositories.PageReposito
 import it.bz.opendatahub.webcomponentspagebuilder.ui.MainLayout;
 import it.bz.opendatahub.webcomponentspagebuilder.ui.dialogs.CreatePageDialog;
 
+/**
+ * View for listing all currently active (non-archived) pages.
+ * 
+ * @author danielrampanelli
+ */
 @Route(value = PagesView.ROUTE, layout = MainLayout.class)
 @HtmlImport("frontend://styles/shared-styles.html")
 public class PagesView extends VerticalLayout {
@@ -43,8 +48,6 @@ public class PagesView extends VerticalLayout {
 		grid.setSizeFull();
 
 		grid.addColumn(Page::getLabel).setFlexGrow(1).setHeader("PAGE");
-
-		// grid.addColumn(Page::getUri).setFlexGrow(1).setHeader("URL");
 
 		grid.addColumn(new ComponentRenderer<>(page -> {
 			Button manageButton = new Button("MANAGE");

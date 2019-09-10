@@ -5,6 +5,12 @@ import org.openqa.selenium.firefox.FirefoxDriverLogLevel;
 import org.openqa.selenium.firefox.FirefoxOptions;
 import org.openqa.selenium.remote.RemoteWebDriver;
 
+/**
+ * Screenshot renderer implementation based on Firefox/Gecko browser and
+ * WebDriver.
+ * 
+ * @author danielrampanelli
+ */
 public class GeckoWebDriverScreenshotRenderer extends WebDriverScreenshotRenderer {
 
 	public GeckoWebDriverScreenshotRenderer() {

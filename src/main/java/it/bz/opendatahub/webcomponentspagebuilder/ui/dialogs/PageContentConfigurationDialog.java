@@ -20,7 +20,9 @@ import it.bz.opendatahub.webcomponentspagebuilder.data.entities.PageContent;
 
 /**
  * Dialog for managing the markup of a selected page content, which allows
- * editing or reverting to the default markup
+ * editing or reverting to the default markup.
+ * 
+ * @author danielrampanelli
  */
 public class PageContentConfigurationDialog extends Dialog {
 

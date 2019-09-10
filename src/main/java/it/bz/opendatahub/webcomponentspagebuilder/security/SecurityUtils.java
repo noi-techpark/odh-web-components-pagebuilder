@@ -20,6 +20,11 @@ import it.bz.opendatahub.webcomponentspagebuilder.ui.errors.CustomRouteNotFoundE
 import it.bz.opendatahub.webcomponentspagebuilder.ui.views.AccessDeniedView;
 import it.bz.opendatahub.webcomponentspagebuilder.ui.views.LoginView;
 
+/**
+ * List of security-related utilities.
+ * 
+ * @author danielrampanelli
+ */
 public class SecurityUtils {
 
 	public static boolean isFrameworkInternalRequest(HttpServletRequest request) {

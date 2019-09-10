@@ -5,16 +5,22 @@
             height: 76px;
         }
         
-        .manage-page-view .page-header .contains-page-label,
-        .edit-page-version-view .page-header .contains-page-label {
+        .manage-page-view .page-header .contains-page-title,
+        .edit-page-version-view .page-header .contains-page-title {
             font-size: 1.8em;
             font-weight: 300;
             line-height: 42px;
         }
         
-        .manage-page-view .page-header .contains-page-label a,
-        .edit-page-version-view .page-header .contains-page-label a {
+        .manage-page-view .page-header .contains-page-title a,
+        .edit-page-version-view .page-header .contains-page-title a {
             color: var(--lumo-body-text-color);
+        }
+        
+        .edit-page-version-view .page-header .contains-page-save-status {
+            font-size: 0.85em;
+            line-height: 51px;
+            padding: 0 1em;
         }
     
         .manage-page-view .is-version-placeholder {
@@ -35,6 +41,7 @@
             background-color: #333333;
             overflow: auto;
             padding: 32px;
+            text-align: center;
         }
         
         .edit-page-version-view .contains-sidebar {
@@ -49,7 +56,7 @@
             overflow: hidden;
         }
         
-        .edit-page-version-view .components .page-content-card {
+        .edit-page-version-view .components .page-component-card {
             background-color: #ffffff;
             cursor: move;
             display: inline-block;

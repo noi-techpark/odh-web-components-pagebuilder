@@ -12,7 +12,13 @@ import com.vaadin.flow.server.VaadinServletResponse;
 
 import it.bz.opendatahub.webcomponentspagebuilder.ui.views.LoginView;
 
-public class CustomHttpSessionRequestCache extends HttpSessionRequestCache {
+/**
+ * Component for storing the last accessed request, so that we can redirect the
+ * user to the originally intended route after a successful login.
+ * 
+ * @author danielrampanelli
+ */
+public class LastRequestHttpSessionRequestCache extends HttpSessionRequestCache {
 
 	@Override
 	public void saveRequest(HttpServletRequest request, HttpServletResponse response) {

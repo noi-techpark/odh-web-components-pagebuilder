@@ -1,6 +1,7 @@
 package it.bz.opendatahub.webcomponentspagebuilder.ui.controllers;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -12,6 +13,8 @@ import org.springframework.stereotype.Component;
 import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.notification.Notification;
 
+import it.bz.opendatahub.webcomponentspagebuilder.data.Domain;
+import it.bz.opendatahub.webcomponentspagebuilder.data.DomainsProvider;
 import it.bz.opendatahub.webcomponentspagebuilder.data.entities.Page;
 import it.bz.opendatahub.webcomponentspagebuilder.data.entities.PageContent;
 import it.bz.opendatahub.webcomponentspagebuilder.data.entities.PagePublication;
@@ -20,10 +23,20 @@ import it.bz.opendatahub.webcomponentspagebuilder.data.entities.PageVersion;
 import it.bz.opendatahub.webcomponentspagebuilder.data.repositories.PagePublicationRepository;
 import it.bz.opendatahub.webcomponentspagebuilder.data.repositories.PageRepository;
 import it.bz.opendatahub.webcomponentspagebuilder.data.repositories.PageVersionRepository;
+import it.bz.opendatahub.webcomponentspagebuilder.deployment.DeploymentManifest;
+import it.bz.opendatahub.webcomponentspagebuilder.deployment.DeploymentPayload;
+import it.bz.opendatahub.webcomponentspagebuilder.deployment.DeploymentPipeline;
+import it.bz.opendatahub.webcomponentspagebuilder.rendering.PageRenderer;
 import it.bz.opendatahub.webcomponentspagebuilder.ui.dialogs.PublishPageVersionDialog;
 
+/**
+ * Controller for handling the various publishing-related actions throughout the
+ * application.
+ * 
+ * @author danielrampanelli
+ */
 @Component
-public class PublicationController {
+public class PublishingController {
 
 	@FunctionalInterface
 	public static interface PublishHandler {
@@ -51,6 +64,12 @@ public class PublicationController {
 
 	@Autowired
 	PagePublicationRepository publicationsRepo;
+
+	@Autowired
+	DomainsProvider domainsProvider;
+
+	@Autowired
+	PageRenderer pageRenderer;
 
 	private PageVersion publishPageVersion(PageVersion pageVersion) {
 		PageVersion publishedVersion = new PageVersion();
@@ -109,7 +128,9 @@ public class PublicationController {
 
 				pagePublication.setDomainName(configuration.getDomain().getHostName());
 
-				if (configuration.getDomain().getAllowSubdomains()
+				Domain domain = configuration.getDomain();
+
+				if (domain.getAllowSubdomains()
 						&& (configuration.getSubdomain() != null && !configuration.getSubdomain().equals(""))) {
 					pagePublication.setSubdomainName(configuration.getSubdomain());
 				}
@@ -125,6 +146,12 @@ public class PublicationController {
 				page.setPublication(pagePublication);
 
 				Page updatedPage = pagesRepo.save(page);
+
+				DeploymentManifest manifest = new DeploymentManifest(page.getPublicVersion());
+				DeploymentPayload payload = new DeploymentPayload(pageRenderer, page.getPublicVersion());
+
+				DeploymentPipeline deploymentPipeline = domain.getDeploymentPipeline();
+				deploymentPipeline.deploy(manifest, payload);
 
 				handler.published(updatedPage, publishedVersion);
 
@@ -147,6 +174,20 @@ public class PublicationController {
 			page.setPublication(pagePublication);
 
 			Page updatedPage = pagesRepo.save(page);
+
+			List<Domain> matchingDomains = domainsProvider.getAvailableDomains().stream()
+					.filter(domain -> domain.getHostName().equals(updatedPage.getPublication().getDomainName()))
+					.collect(Collectors.toList());
+
+			if (!matchingDomains.isEmpty()) {
+				Domain domain = matchingDomains.get(0);
+
+				DeploymentManifest manifest = new DeploymentManifest(page.getPublicVersion());
+				DeploymentPayload payload = new DeploymentPayload(pageRenderer, page.getPublicVersion());
+
+				DeploymentPipeline deploymentPipeline = domain.getDeploymentPipeline();
+				deploymentPipeline.deploy(manifest, payload);
+			}
 
 			handler.published(updatedPage, publishedVersion);
 
@@ -181,6 +222,19 @@ public class PublicationController {
 		ConfirmDialog dialog = new ConfirmDialog("UNPUBLISH PAGE",
 				"Are you sure you want to unpublish this page? Afterwards the page won't be available to visitors anymore.",
 				"UNPUBLISH", (dialogEvent) -> {
+					List<Domain> matchingDomains = domainsProvider.getAvailableDomains().stream()
+							.filter(domain -> domain.getHostName().equals(page.getPublication().getDomainName()))
+							.collect(Collectors.toList());
+
+					if (!matchingDomains.isEmpty()) {
+						Domain domain = matchingDomains.get(0);
+
+						DeploymentManifest manifest = new DeploymentManifest(page.getPublicVersion());
+
+						DeploymentPipeline deploymentPipeline = domain.getDeploymentPipeline();
+						deploymentPipeline.undeploy(manifest);
+					}
+
 					page.setPublication(null);
 
 					Page updatedPage = pagesRepo.save(page);

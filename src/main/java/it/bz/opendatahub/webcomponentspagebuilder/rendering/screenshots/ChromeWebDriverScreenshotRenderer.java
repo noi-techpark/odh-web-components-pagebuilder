@@ -6,6 +6,12 @@ import org.openqa.selenium.remote.RemoteWebDriver;
 
 import io.github.bonigarcia.wdm.ChromeDriverManager;
 
+/**
+ * Screenshot renderer implementation based on Chrome/Chromium browser and
+ * WebDriver.
+ * 
+ * @author danielrampanelli
+ */
 public class ChromeWebDriverScreenshotRenderer extends WebDriverScreenshotRenderer {
 
 	public ChromeWebDriverScreenshotRenderer() {

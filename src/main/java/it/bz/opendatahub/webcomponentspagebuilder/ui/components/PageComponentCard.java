@@ -1,6 +1,5 @@
 package it.bz.opendatahub.webcomponentspagebuilder.ui.components;
 
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -14,37 +13,41 @@ import it.bz.opendatahub.webcomponentspagebuilder.data.PageComponent;
 
 /**
  * Present the available web components and support dragging the component onto
- * the page
+ * the page.
+ * 
+ * @author danielrampanelli
  */
-public class PageContentCard extends Card {
+public class PageComponentCard extends Card {
 
 	private static final long serialVersionUID = -814467441008035093L;
 
 	private PageComponent component;
 
-	public PageContentCard(PageComponent component) {
+	public PageComponentCard(PageComponent component) {
 		super(new TitleLabel(component.getTitle()).withWhiteSpaceNoWrap(),
 				new SecondaryLabel(component.getDescription()));
 
 		this.component = component;
 
-		addClassName("page-content-card");
+		addClassName("page-component-card");
 		setWidth("240px");
 		setHeight("180px");
 
 		ObjectMapper objectMapper = new ObjectMapper();
 
 		Map<String, Object> data = new HashMap<>();
-		data.put("assets", Arrays.asList(component.getAssetUrl()));
-		data.put("tag", component.getTag());
-		data.put("markup", component.getDefaultMarkup());
+		data.put("uid", component.getUid());
+		data.put("tag", component.getTagName());
+		data.put("assets", component.getAssets());
+		data.put("markup", component.getDefaultMarkup() != null ? component.getDefaultMarkup()
+				: String.format("<%s></%s>", component.getTagName(), component.getTagName()));
 
 		getElement().getNode().runWhenAttached(ui -> {
 			try {
 				ui.getPage()
 						.executeJavaScript("$0.addEventListener('dragstart', function(e) { "
 								+ "e.dataTransfer.setData('componentToInsert', JSON.stringify("
-								+ objectMapper.writeValueAsString(data) + "));" + "});", PageContentCard.this);
+								+ objectMapper.writeValueAsString(data) + "));" + "});", PageComponentCard.this);
 			} catch (JsonProcessingException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();

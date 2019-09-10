@@ -14,6 +14,11 @@ import freemarker.template.TemplateModel;
 import it.bz.opendatahub.webcomponentspagebuilder.data.entities.PageContent;
 import it.bz.opendatahub.webcomponentspagebuilder.data.entities.PageVersion;
 
+/**
+ * Custom template directive/tag for rendering the page's content blocks.
+ * 
+ * @author danielrampanelli
+ */
 public class PageContentsDirective implements TemplateDirectiveModel {
 
 	private PageVersion page;
@@ -38,7 +43,7 @@ public class PageContentsDirective implements TemplateDirectiveModel {
 			}
 
 			out.append(String.format("<div id=\"%s\" class=\"odh-page-content\">\n%s\n</div>\n",
-					pageContent.getIdAsString(), pageContent.getMarkup()));
+					pageContent.getContentID().toString(), pageContent.getMarkup()));
 		}
 
 		for (String asset : assets) {

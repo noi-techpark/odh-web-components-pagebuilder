@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -22,53 +23,75 @@ import it.bz.opendatahub.webcomponentspagebuilder.data.entities.PageContent;
 import it.bz.opendatahub.webcomponentspagebuilder.data.entities.PageVersion;
 import it.bz.opendatahub.webcomponentspagebuilder.ui.dialogs.PageContentConfigurationDialog;
 
+/**
+ * Custom element/component that augments the loaded page and allows editing and
+ * interaction with it via drag-drop or by using the content block's respective
+ * actions.
+ * 
+ * @author danielrampanelli
+ */
 @HtmlImport("ui/PageEditor.html")
 @Tag("pagebuilder-page-editor")
 public class PageEditor extends PolymerTemplate<TemplateModel> {
 
 	private static final long serialVersionUID = -1261729094659327441L;
 
+	@FunctionalInterface
+	public interface UpdateHandler {
+		public void pageChanged();
+	}
+
 	@Id("frame")
 	private IFrame frame;
 
-	private PageVersion page;
+	private PageVersion pageVersion;
 
-	public void setPage(PageVersion pageVersion) {
-		this.page = pageVersion;
+	private Optional<UpdateHandler> updateHandler;
+
+	public void setPageVersion(PageVersion pageVersion) {
+		this.pageVersion = pageVersion;
+	}
+
+	public void setUpdateHandler(UpdateHandler updateHandler) {
+		this.updateHandler = Optional.of(updateHandler);
 	}
 
 	public void bind(PageVersion pageVersion) {
-		this.page = pageVersion;
+		this.pageVersion = pageVersion;
 
-		frame.setSrc(String.format("/pages/page-editor/%s.html", page.getIdAsString()));
+		frame.setSrc(String.format("/pages/page-editor/%s.html", pageVersion.getIdAsString()));
 	}
 
 	@ClientCallable
-	public void droppedContent(String[] assets, String tagName, String markup, String insertBefore) {
+	public void droppedContent(String uid, String tagName, String markup, String[] assets, String insertBefore) {
+		UUID contentID = UUID.randomUUID();
+
 		PageContent pageContent = new PageContent();
-		pageContent.setId(UUID.randomUUID());
-		pageContent.setPageVersion(page);
+		pageContent.setUid(uid);
+		pageContent.setContentID(contentID);
+		pageContent.setPageVersion(pageVersion);
 		pageContent.setAssets(Arrays.asList(assets));
 		pageContent.setTagName(tagName);
 		pageContent.setMarkup(markup);
 		pageContent.setPosition(
-				page.getContents().stream().map(PageContent::getPosition).max(Integer::compare).orElse(-1) + 1);
+				pageVersion.getContents().stream().map(PageContent::getPosition).max(Integer::compare).orElse(-1) + 1);
 
-		page.getContents().add(pageContent);
+		pageVersion.getContents().add(pageContent);
 
 		JsonArray jsAssets = Json.createArray();
 		for (int i = 0; i < pageContent.getAssets().size(); i++) {
 			jsAssets.set(i, pageContent.getAssets().get(i));
 		}
 
-		getElement().callFunction("insertContent", pageContent.getIdAsString(), jsAssets, tagName, markup,
-				insertBefore);
+		getElement().callFunction("insertContent", contentID.toString(), markup, jsAssets, insertBefore);
+
+		updateHandler.ifPresent(UpdateHandler::pageChanged);
 	}
 
 	@ClientCallable
 	public void editContent(String uuid) {
-		List<PageContent> matches = page.getContents().stream()
-				.filter(content -> content.getIdAsString().equals(uuid)).collect(Collectors.toList());
+		List<PageContent> matches = pageVersion.getContents().stream()
+				.filter(content -> content.getContentID().toString().equals(uuid)).collect(Collectors.toList());
 
 		if (!matches.isEmpty()) {
 			PageContent pageContent = matches.get(0);
@@ -79,6 +102,8 @@ public class PageEditor extends PolymerTemplate<TemplateModel> {
 				pageContent.setMarkup(updateMarkup);
 
 				getElement().callFunction("updateContent", uuid, updateMarkup);
+
+				updateHandler.ifPresent(UpdateHandler::pageChanged);
 			});
 
 			dialog.open();
@@ -89,8 +114,8 @@ public class PageEditor extends PolymerTemplate<TemplateModel> {
 	public void rearrangedContents(String[] uuids) {
 		Map<String, PageContent> pageContentsById = new HashMap<>();
 
-		page.getContents().forEach(pageContent -> {
-			pageContentsById.put(pageContent.getIdAsString(), pageContent);
+		pageVersion.getContents().forEach(pageContent -> {
+			pageContentsById.put(pageContent.getContentID().toString(), pageContent);
 		});
 
 		List<PageContent> rearrangedPageContents = new ArrayList<>();
@@ -104,13 +129,17 @@ public class PageEditor extends PolymerTemplate<TemplateModel> {
 			}
 		}
 
-		page.setContents(rearrangedPageContents);
+		pageVersion.setContents(rearrangedPageContents);
+
+		updateHandler.ifPresent(UpdateHandler::pageChanged);
 	}
 
 	@ClientCallable
 	public void removedContent(String uuid) {
-		page.setContents(page.getContents().stream().filter(content -> !content.getIdAsString().equals(uuid))
-				.collect(Collectors.toList()));
+		pageVersion.setContents(pageVersion.getContents().stream()
+				.filter(content -> !content.getContentID().toString().equals(uuid)).collect(Collectors.toList()));
+
+		updateHandler.ifPresent(UpdateHandler::pageChanged);
 	}
 
 }

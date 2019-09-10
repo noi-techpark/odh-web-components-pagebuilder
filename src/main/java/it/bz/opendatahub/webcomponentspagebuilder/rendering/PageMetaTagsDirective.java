@@ -11,6 +11,11 @@ import freemarker.template.TemplateException;
 import freemarker.template.TemplateModel;
 import it.bz.opendatahub.webcomponentspagebuilder.data.entities.PageVersion;
 
+/**
+ * Custom template directive/tag for rendering the page's meta tags.
+ * 
+ * @author danielrampanelli
+ */
 public class PageMetaTagsDirective implements TemplateDirectiveModel {
 
 	private PageVersion page;

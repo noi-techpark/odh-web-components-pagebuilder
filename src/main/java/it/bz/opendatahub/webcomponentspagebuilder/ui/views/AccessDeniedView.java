@@ -15,6 +15,13 @@ import com.vaadin.flow.templatemodel.TemplateModel;
 
 import it.bz.opendatahub.webcomponentspagebuilder.ui.MainLayout;
 
+/**
+ * View that will be triggered when accessing views that require a valid
+ * authentication or is restricted to users with specific permissions and
+ * capabilities.
+ * 
+ * @author danielrampanelli
+ */
 @ParentLayout(MainLayout.class)
 @Route
 @Tag("access-denied-view")

@@ -11,6 +11,11 @@ import org.springframework.data.repository.query.Param;
 
 import it.bz.opendatahub.webcomponentspagebuilder.data.entities.PageVersion;
 
+/**
+ * Repository component for accessing page versions.
+ * 
+ * @author danielrampanelli
+ */
 @Transactional
 public interface PageVersionRepository extends JpaRepository<PageVersion, UUID> {
 

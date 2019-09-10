@@ -7,6 +7,12 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.MappedSuperclass;
 
+/**
+ * Abstract base class for all entities, defines actually just a non-progressive
+ * identifier property (UUID v4).
+ * 
+ * @author danielrampanelli
+ */
 @MappedSuperclass
 public abstract class BaseEntity {
 

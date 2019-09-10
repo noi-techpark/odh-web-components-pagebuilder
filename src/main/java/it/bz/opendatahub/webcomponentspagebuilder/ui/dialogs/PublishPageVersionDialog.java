@@ -29,6 +29,12 @@ import it.bz.opendatahub.webcomponentspagebuilder.data.DomainsProvider;
 import it.bz.opendatahub.webcomponentspagebuilder.data.entities.Page;
 import it.bz.opendatahub.webcomponentspagebuilder.data.repositories.PageRepository;
 
+/**
+ * Dialog that allows selection and definition of the publishing information,
+ * like domain, subdomain and path, used during the deployment of a single page.
+ * 
+ * @author danielrampanelli
+ */
 @Scope("prototype")
 @SpringComponent
 public class PublishPageVersionDialog extends Dialog {
