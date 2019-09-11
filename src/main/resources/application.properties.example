@@ -8,10 +8,10 @@ spring.jpa.properties.hibernate.jdbc.lob.non_contextual_creation = true
 
 security.basic.enabled = false
 
-# application.database.url = TODO
-# application.database.username = TODO
-# application.database.password = TODO
+application.database.url = TODO
+application.database.username = TODO
+application.database.password = TODO
 
-# application.aws.region = TODO
-# application.aws.access-key = TODO
-# application.aws.access-secret = TODO
+application.aws.region = TODO
+application.aws.access-key = TODO
+application.aws.access-secret = TODO
