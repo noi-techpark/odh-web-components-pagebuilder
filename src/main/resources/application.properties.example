@@ -1,17 +1,16 @@
+# SYSTEM SETTINGS
 server.port = 8080
 server.servlet.session.persistent = false
 server.servlet.compression.enabled = true
 server.servlet.compression.mime-types = application/json,application/xml,text/html,text/xml,text/plain,application/javascript,text/css
-
 spring.servlet.multipart.enabled = false
 spring.jpa.properties.hibernate.jdbc.lob.non_contextual_creation = true
-
 security.basic.enabled = false
 
-application.database.url = TODO
-application.database.username = TODO
-application.database.password = TODO
-
-application.aws.region = TODO
-application.aws.access-key = TODO
-application.aws.access-secret = TODO
+# LOCAL SETTINGS
+application.database.url = ${POSTGRES_URL}
+application.database.username = ${POSTGRES_USERNAME}
+application.database.password = ${POSTGRES_PASSWORD}
+application.aws.region = ${AWS_REGION}
+application.aws.access-key = ${AWS_ACCESS_KEY}
+application.aws.access-secret = ${AWS_SECRET_KEY}
