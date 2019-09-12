@@ -116,6 +116,8 @@ public class PageContent extends BaseEntity {
 
 	public PageContent copy() {
 		PageContent copy = new PageContent();
+		copy.setUid(getUid());
+		copy.setContentID(getContentID());
 		copy.setTagName(getTagName());
 		copy.setAssets(getAssets());
 		copy.setMarkup(getMarkup());
