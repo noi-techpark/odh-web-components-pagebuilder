@@ -20,6 +20,7 @@ import it.bz.opendatahub.webcomponentspagebuilder.data.entities.PageContent;
 import it.bz.opendatahub.webcomponentspagebuilder.data.entities.PagePublication;
 import it.bz.opendatahub.webcomponentspagebuilder.data.entities.PagePublicationStatus;
 import it.bz.opendatahub.webcomponentspagebuilder.data.entities.PageVersion;
+import it.bz.opendatahub.webcomponentspagebuilder.data.entities.PageWidget;
 import it.bz.opendatahub.webcomponentspagebuilder.data.repositories.PagePublicationRepository;
 import it.bz.opendatahub.webcomponentspagebuilder.data.repositories.PageRepository;
 import it.bz.opendatahub.webcomponentspagebuilder.data.repositories.PageVersionRepository;
@@ -87,6 +88,13 @@ public class PublishingController {
 			return copy;
 		}).collect(Collectors.toList()));
 
+		publishedVersion.setWidgets(pageVersion.getWidgets().stream().map(pageWidget -> {
+			PageWidget copy = pageWidget.copy();
+			copy.setPageVersion(publishedVersion);
+
+			return copy;
+		}).collect(Collectors.toList()));
+
 		return versionsRepo.save(publishedVersion);
 	}
 
@@ -101,9 +109,18 @@ public class PublishingController {
 
 			draftVersion.setTitle(publicVersion.getTitle());
 			draftVersion.setDescription(publicVersion.getDescription());
+
 			draftVersion.setContents(publicVersion.getContents().stream().map(pageContent -> {
 				PageContent copy = pageContent.copy();
 				copy.setPageVersion(draftVersion);
+
+				return copy;
+			}).collect(Collectors.toList()));
+
+			draftVersion.setWidgets(publicVersion.getWidgets().stream().map(pageWidget -> {
+				PageWidget copy = pageWidget.copy();
+				copy.setPageVersion(draftVersion);
+
 				return copy;
 			}).collect(Collectors.toList()));
 		}

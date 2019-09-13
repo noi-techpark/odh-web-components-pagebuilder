@@ -19,9 +19,11 @@ import com.vaadin.flow.templatemodel.TemplateModel;
 
 import elemental.json.Json;
 import elemental.json.JsonArray;
+import it.bz.opendatahub.webcomponentspagebuilder.data.PageComponent;
 import it.bz.opendatahub.webcomponentspagebuilder.data.entities.PageContent;
 import it.bz.opendatahub.webcomponentspagebuilder.data.entities.PageVersion;
-import it.bz.opendatahub.webcomponentspagebuilder.ui.dialogs.PageContentConfigurationDialog;
+import it.bz.opendatahub.webcomponentspagebuilder.data.entities.PageWidget;
+import it.bz.opendatahub.webcomponentspagebuilder.ui.dialogs.PageElementConfigurationDialog;
 
 /**
  * Custom element/component that augments the loaded page and allows editing and
@@ -88,6 +90,42 @@ public class PageEditor extends PolymerTemplate<TemplateModel> {
 		updateHandler.ifPresent(UpdateHandler::pageChanged);
 	}
 
+	public void addContent(PageComponent component) {
+		droppedContent(component.getUid(), component.getTagName(), component.getMarkup(),
+				component.getAssets().toArray(new String[] {}), null);
+	}
+
+	public PageWidget addWidget(PageComponent component) {
+		UUID widgetID = UUID.randomUUID();
+
+		String markup = component.getMarkup();
+
+		PageWidget pageWidget = new PageWidget();
+		pageWidget.setUid(component.getUid());
+		pageWidget.setWidgetID(widgetID);
+		pageWidget.setPageVersion(pageVersion);
+		pageWidget.setAssets(component.getAssets());
+		pageWidget.setTagName(component.getTagName());
+		pageWidget.setMarkup(markup);
+		pageWidget.setPosition(
+				pageVersion.getWidgets().stream().map(PageWidget::getPosition).max(Integer::compare).orElse(-1) + 1);
+
+		pageVersion.getWidgets().add(pageWidget);
+
+		JsonArray jsAssets = Json.createArray();
+		for (int i = 0; i < pageWidget.getAssets().size(); i++) {
+			jsAssets.set(i, pageWidget.getAssets().get(i));
+		}
+
+		getElement().callFunction("insertWidget", widgetID.toString(), markup, jsAssets);
+
+		return pageWidget;
+	}
+
+	public void removeWidget(PageWidget pageWidget) {
+		getElement().callFunction("removeWidget", pageWidget.getWidgetID().toString());
+	}
+
 	@ClientCallable
 	public void editContent(String uuid) {
 		List<PageContent> matches = pageVersion.getContents().stream()
@@ -96,7 +134,7 @@ public class PageEditor extends PolymerTemplate<TemplateModel> {
 		if (!matches.isEmpty()) {
 			PageContent pageContent = matches.get(0);
 
-			PageContentConfigurationDialog dialog = new PageContentConfigurationDialog(pageContent);
+			PageElementConfigurationDialog dialog = new PageElementConfigurationDialog(pageContent);
 
 			dialog.setSaveHandler((updateMarkup) -> {
 				pageContent.setMarkup(updateMarkup);
@@ -140,6 +178,10 @@ public class PageEditor extends PolymerTemplate<TemplateModel> {
 				.filter(content -> !content.getContentID().toString().equals(uuid)).collect(Collectors.toList()));
 
 		updateHandler.ifPresent(UpdateHandler::pageChanged);
+	}
+
+	public void updateWidget(UUID widgetID, String markup) {
+		getElement().callFunction("updateWidget", widgetID.toString(), markup);
 	}
 
 }

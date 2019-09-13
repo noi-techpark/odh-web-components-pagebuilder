@@ -1,7 +1,6 @@
 <custom-style>
     <style>
-        .manage-page-view .page-header,
-        .edit-page-version-view .page-header {
+        .manage-page-view .page-header {
             height: 76px;
         }
         
@@ -19,8 +18,7 @@
         
         .edit-page-version-view .page-header .contains-page-save-status {
             font-size: 0.85em;
-            line-height: 51px;
-            padding: 0 1em;
+            opacity: 0.75;
         }
     
         .manage-page-view .is-version-placeholder {
@@ -46,17 +44,28 @@
         
         .edit-page-version-view .contains-sidebar {
             box-sizing: border-box;
-            flex: 0 0 528px;
-            padding: 0 1em 0 0;
+            flex: 0 0 376px;
+            padding: 0 0 0 1em;
         }
         
-        .edit-page-version-view .contains-sidebar .components {
+        .edit-page-version-view .contains-sidebar .placeholder {
+            opacity: 0.75;
+            padding: 1em;
+        }
+        
+        .edit-page-version-view .contains-library {
+            box-sizing: border-box;
+            flex: 0 0 376px;
+        }
+        
+        .edit-page-version-view .contains-library .components {
             margin-left: -8px;
             margin-right: -8px;
+            margin-top: 9px;
             overflow: hidden;
         }
         
-        .edit-page-version-view .components .page-component-card {
+        .edit-page-version-view .contains-library .components .page-component-card {
             background-color: #ffffff;
             cursor: move;
             display: inline-block;

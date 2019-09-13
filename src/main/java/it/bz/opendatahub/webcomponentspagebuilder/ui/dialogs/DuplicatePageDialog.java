@@ -29,6 +29,7 @@ import it.bz.opendatahub.webcomponentspagebuilder.data.DomainsProvider;
 import it.bz.opendatahub.webcomponentspagebuilder.data.entities.Page;
 import it.bz.opendatahub.webcomponentspagebuilder.data.entities.PageContent;
 import it.bz.opendatahub.webcomponentspagebuilder.data.entities.PageVersion;
+import it.bz.opendatahub.webcomponentspagebuilder.data.entities.PageWidget;
 import it.bz.opendatahub.webcomponentspagebuilder.data.repositories.PageRepository;
 
 /**
@@ -58,6 +59,8 @@ public class DuplicatePageDialog extends Dialog {
 
 		private List<PageContent> contents;
 
+		private List<PageWidget> widgets;
+
 		public PageToDuplicate() {
 
 		}
@@ -66,6 +69,7 @@ public class DuplicatePageDialog extends Dialog {
 			setTitle(pageVersion.getTitle());
 			setDescription(pageVersion.getDescription());
 			setContents(pageVersion.getContents());
+			setWidgets(pageVersion.getWidgets());
 		}
 
 		public String getLabel() {
@@ -98,6 +102,14 @@ public class DuplicatePageDialog extends Dialog {
 
 		public void setContents(List<PageContent> contents) {
 			this.contents = contents;
+		}
+
+		public List<PageWidget> getWidgets() {
+			return widgets;
+		}
+
+		public void setWidgets(List<PageWidget> widgets) {
+			this.widgets = widgets;
 		}
 
 	}
@@ -161,6 +173,14 @@ public class DuplicatePageDialog extends Dialog {
 						duplicatedPageVersion.setContents(bean.getContents().stream().map(pageContent -> {
 							PageContent copy = pageContent.copy();
 							copy.setPageVersion(duplicatedPageVersion);
+
+							return copy;
+						}).collect(Collectors.toList()));
+
+						duplicatedPageVersion.setWidgets(bean.getWidgets().stream().map(pageWidget -> {
+							PageWidget copy = pageWidget.copy();
+							copy.setPageVersion(duplicatedPageVersion);
+
 							return copy;
 						}).collect(Collectors.toList()));
 
