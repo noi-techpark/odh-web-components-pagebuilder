@@ -69,7 +69,11 @@ cd odh-web-components-pagebuilder/
 
 ### Configuration
 
-The application expects a configuration file named `application.properties` at the location `src/main/resources` in order to run correctly. Please make a copy of the `application.properties.example` file situated in the same folder and specify the following properties:
+The application expects a configuration file named `application.properties` at the location `src/main/resources` in order to run correctly. Please make a copy of the `application.properties.example` file situated in the same folder to get started.
+
+**Important note**: Please make sure to keep the `# SYSTEM SETTINGS` section of this configuration file synced with the provided example file when fetching updates in the future.
+
+The following properties need to be specified:
 
 * application.database.url (JDBC url to PostgreSQL database)
 * application.database.username (database username)
@@ -77,8 +81,20 @@ The application expects a configuration file named `application.properties` at t
 * application.aws.region (AWS region identifier)
 * application.aws.access-key (AWS user access key)
 * application.aws.access-secret (AWS user access secret)
+* application.users-file (path to users properties file)
 
-**Important note**: Please make sure to keep the `# SYSTEM SETTINGS` section of this configuration file synced with the provided example file when fetching updates in the future.
+The `application.users-file` property must contain a valid and accessible file path containing the list of application users, one line for each user. Specify the username as the key and password as the value of the property, the password must be encoded as a Bcrypt hash (ensure the prefix `$2a$` is used), which can be generated using one of these websites
+
+* [https://www.devglan.com/online-tools/bcrypt-hash-generator](https://www.devglan.com/online-tools/bcrypt-hash-generator)
+* [https://www.browserling.com/tools/bcrypt](https://www.browserling.com/tools/bcrypt)
+
+The following snippet is an example of a `application.users-file` properties file
+
+```ini
+admin = $2a$04$X6hBNGIgvuTCC/2kdwFSvujZvKd9bZIfcYutHt.VOFHJIahjO1ida
+user1 = ...
+user2 = ...
+```
 
 Moreover, it is also possible and not mandatory to override and alter the default set of Spring `@Bean` components by creating a dedicated Java class with the `@Configuration` annotation.
 

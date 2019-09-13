@@ -17,3 +17,4 @@ application.database.password = ${POSTGRES_PASSWORD}
 application.aws.region = ${AWS_REGION}
 application.aws.access-key = ${AWS_ACCESS_KEY}
 application.aws.access-secret = ${AWS_SECRET_KEY}
+application.users-file = ${USERS_FILE}

@@ -17,6 +17,9 @@ pipeline {
         AWS_REGION = 'eu-west-1'
         AWS_ACCESS_KEY = credentials('pagebuilder-test-s3-access-key')
         AWS_SECRET_KEY = credentials('pagebuilder-test-s3-secret-key')
+
+        // TODO define path to users properties file
+        USERS_FILE = ''
     }
 
     stages {
@@ -37,6 +40,10 @@ pipeline {
                 sh 'sed -i -e "s%\\(application.aws.region\\s*=\\).*\\$%\\1${AWS_REGION}%" src/main/resources/application.properties'
                 sh 'sed -i -e "s%\\(application.aws.access-key\\s*=\\).*\\$%\\1${AWS_ACCESS_KEY}%" src/main/resources/application.properties'
                 sh 'sed -i -e "s%\\(application.aws.secret-key\\s*=\\).*\\$%\\1${AWS_SECRET_KEY}%" src/main/resources/application.properties'
+                
+                // TODO create users file
+                
+                sh 'sed -i -e "s%\\(application.users-file\\s*=\\).*\\$%\\1${USERS_FILE}%" src/main/resources/application.properties'
             }
         }
         stage('Test') {
