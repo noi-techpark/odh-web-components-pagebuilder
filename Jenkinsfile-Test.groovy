@@ -46,7 +46,7 @@ pipeline {
         }
         stage('Test') {
             steps {
-                sh 'mvn -B -U clean test verify -Pintegration-tests'
+                sh 'mvn -B -U clean test'
             }
         }
         stage('Deploy') {
