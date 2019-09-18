@@ -14,9 +14,12 @@ pipeline {
         POSTGRES_USERNAME = credentials('pagebuilder-test-postgres-username')
         POSTGRES_PASSWORD = credentials('pagebuilder-test-postgres-password')
 
-        S3_REGION = 'eu-west-1'
-        S3_ACCESS_KEY = credentials('pagebuilder-test-s3-access-key')
-        S3_SECRET_KEY = credentials('pagebuilder-test-s3-secret-key')
+        AWS_REGION = 'eu-west-1'
+        AWS_ACCESS_KEY = credentials('pagebuilder-test-s3-access-key')
+        AWS_SECRET_KEY = credentials('pagebuilder-test-s3-secret-key')
+
+        // TODO define path to users properties file
+        USERS_FILE = ''
     }
 
     stages {
@@ -34,9 +37,13 @@ pipeline {
                 sh 'sed -i -e "s%\\(application.database.username\\s*=\\).*\\$%\\1${POSTGRES_USERNAME}%" src/main/resources/application.properties'
                 sh 'sed -i -e "s%\\(application.database.password\\s*=\\).*\\$%\\1${POSTGRES_PASSWORD}%" src/main/resources/application.properties'
                 
-                sh 'sed -i -e "s%\\(application.aws.region\\s*=\\).*\\$%\\1${S3_REGION}%" src/main/resources/application.properties'
-                sh 'sed -i -e "s%\\(application.aws.access-key\\s*=\\).*\\$%\\1${S3_ACCESS_KEY}%" src/main/resources/application.properties'
-                sh 'sed -i -e "s%\\(application.aws.secret-key\\s*=\\).*\\$%\\1${S3_SECRET_KEY}%" src/main/resources/application.properties'
+                sh 'sed -i -e "s%\\(application.aws.region\\s*=\\).*\\$%\\1${AWS_REGION}%" src/main/resources/application.properties'
+                sh 'sed -i -e "s%\\(application.aws.access-key\\s*=\\).*\\$%\\1${AWS_ACCESS_KEY}%" src/main/resources/application.properties'
+                sh 'sed -i -e "s%\\(application.aws.secret-key\\s*=\\).*\\$%\\1${AWS_SECRET_KEY}%" src/main/resources/application.properties'
+                
+                // TODO create users file
+                
+                sh 'sed -i -e "s%\\(application.users-file\\s*=\\).*\\$%\\1${USERS_FILE}%" src/main/resources/application.properties'
             }
         }
         stage('Test') {

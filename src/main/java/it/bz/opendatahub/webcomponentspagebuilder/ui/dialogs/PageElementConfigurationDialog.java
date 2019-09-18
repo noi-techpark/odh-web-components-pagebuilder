@@ -16,7 +16,7 @@ import com.vaadin.flow.data.binder.ValidationResult;
 import com.vaadin.flow.data.binder.ValueContext;
 import com.vaadin.flow.data.validator.AbstractValidator;
 
-import it.bz.opendatahub.webcomponentspagebuilder.data.entities.PageContent;
+import it.bz.opendatahub.webcomponentspagebuilder.data.entities.PageElement;
 
 /**
  * Dialog for managing the markup of a selected page content, which allows
@@ -24,7 +24,7 @@ import it.bz.opendatahub.webcomponentspagebuilder.data.entities.PageContent;
  * 
  * @author danielrampanelli
  */
-public class PageContentConfigurationDialog extends Dialog {
+public class PageElementConfigurationDialog extends Dialog {
 
 	private static final long serialVersionUID = -131927632298787518L;
 
@@ -33,11 +33,11 @@ public class PageContentConfigurationDialog extends Dialog {
 		public void save(String markup);
 	}
 
-	public class PageContentToUpdate {
+	public class PageElementToUpdate {
 
 		private String markup;
 
-		public PageContentToUpdate() {
+		public PageElementToUpdate() {
 
 		}
 
@@ -82,17 +82,17 @@ public class PageContentConfigurationDialog extends Dialog {
 
 	private Optional<SaveHandler> saveHandler = Optional.empty();
 
-	public PageContentConfigurationDialog(PageContent pageContent) {
+	public PageElementConfigurationDialog(PageElement pageElement) {
 		TextArea textarea = new TextArea();
-		textarea.setValue(pageContent.getMarkup());
+		textarea.setValue(pageElement.getMarkup());
 		textarea.setWidthFull();
 		textarea.setHeight("320px");
 
-		Binder<PageContentToUpdate> binder = new Binder<>(PageContentToUpdate.class);
+		Binder<PageElementToUpdate> binder = new Binder<>(PageElementToUpdate.class);
 
 		binder.forField(textarea).asRequired()
-				.withValidator(new MarkupValidator(pageContent.getTagName(), String.format(
-						"Invalid markup, please use only a single and valid <%s> element.", pageContent.getTagName())))
+				.withValidator(new MarkupValidator(pageElement.getTagName(), String.format(
+						"Invalid markup, please use only a single and valid <%s> element.", pageElement.getTagName())))
 				.bind("markup");
 
 		Button saveButton = new Button("SAVE");

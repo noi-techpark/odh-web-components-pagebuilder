@@ -1,10 +1,11 @@
 package it.bz.opendatahub.webcomponentspagebuilder.controllers;
 
+import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
 
 import javax.annotation.PostConstruct;
 
@@ -28,15 +29,19 @@ public class ComponentsController {
 	@Autowired(required = false)
 	PageComponentsProvider componentsProvider;
 
-	private Set<PageComponent> components = new HashSet<>();
+	private Map<String, PageComponent> components = new HashMap<>();
 
 	@PostConstruct
 	private void postConstruct() {
 		refresh();
 	}
 
-	public synchronized Set<PageComponent> getAll() {
-		return Collections.unmodifiableSet(components);
+	public synchronized Collection<PageComponent> getAll() {
+		return Collections.unmodifiableCollection(components.values());
+	}
+
+	public PageComponent getByUid(String uid) {
+		return components.get(uid);
 	}
 
 	private void refresh() {
@@ -48,7 +53,10 @@ public class ComponentsController {
 
 		synchronized (this) {
 			components.clear();
-			components.addAll(fetchedComponents);
+
+			for (PageComponent pageComponent : fetchedComponents) {
+				components.put(pageComponent.getUid(), pageComponent);
+			}
 		}
 	}
 

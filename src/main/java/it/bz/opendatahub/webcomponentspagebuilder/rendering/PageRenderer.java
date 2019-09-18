@@ -33,8 +33,9 @@ public class PageRenderer {
 
 		Configuration configuration = new Configuration(Configuration.VERSION_2_3_28);
 		configuration.setClassForTemplateLoading(PageRenderer.class, "/templates");
-		configuration.setSharedVariable("metas", new PageMetaTagsDirective(pageVersion));
+		configuration.setSharedVariable("metatags", new PageMetaTagsDirective(pageVersion));
 		configuration.setSharedVariable("contents", new PageContentsDirective(pageVersion));
+		configuration.setSharedVariable("widgets", new PageWidgetsDirective(pageVersion));
 
 		Template template = configuration.getTemplate("default.ftl");
 		template.process(new HashMap<>(), writer);

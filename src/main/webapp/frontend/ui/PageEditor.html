@@ -247,7 +247,56 @@
                 
                 self.injectControls(document, pageContent);
                 
+                self.ensureVisible(pageContent);
+                
                 self.updatePlaceholder();
+            }
+            
+            insertWidget(uuid, markup, assets) {
+            	var self = this;
+            	
+            	var document = this.shadowRoot.querySelector('iframe').contentWindow.document;
+                var widgets = document.getElementById('odh-widgets');
+                
+                var pageWidget = document.createElement('div');
+                pageWidget.setAttribute('id', uuid);
+                pageWidget.classList.add('odh-page-widget');
+                pageWidget.innerHTML = markup;
+            	
+                widgets.appendChild(pageWidget);
+                widgets.appendChild(document.createTextNode('\n'));
+            	
+            	if (!!assets) {
+                    [].forEach.call(assets, function(asset) {
+                        var script = document.querySelector('script[src="' + asset + '"]');
+                        if (!script) {
+                            script = document.createElement('script');
+                            script.setAttribute('src', asset);
+                            script.setAttribute('async', true);
+                            document.getElementById('odh-widgets').appendChild(script);
+                        }
+                    });
+                }
+            }
+            
+            updateWidget(uuid, markup) {
+                var self = this;
+                
+                var document = this.shadowRoot.querySelector('iframe').contentWindow.document;
+                
+                var pageWidget = document.getElementById(uuid);
+                if (!!pageWidget) {
+                	pageWidget.innerHTML = markup;
+                }
+            }
+            
+            removeWidget(uuid) {
+                var self = this;
+                
+                var document = this.shadowRoot.querySelector('iframe').contentWindow.document;
+                var pageWidget = document.getElementById(uuid);
+                
+                pageWidget.parentNode.removeChild(pageWidget);
             }
             
             updateContent(uuid, markup) {

@@ -79,6 +79,10 @@ public class PageComponent {
 		this.defaultMarkup = defaultMarkup;
 	}
 
+	public String getMarkup() {
+		return getDefaultMarkup() != null ? getDefaultMarkup() : String.format("<%s></%s>", getTagName(), getTagName());
+	}
+
 	@Override
 	public boolean equals(Object o) {
 		if (this == o) {

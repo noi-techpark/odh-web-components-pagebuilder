@@ -55,6 +55,10 @@ public class PageVersion extends BaseEntity {
 	@OrderColumn(name = "position")
 	private List<PageContent> contents = new LinkedList<>();
 
+	@OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER, mappedBy = "pageVersion", orphanRemoval = true)
+	@OrderColumn(name = "position")
+	private List<PageWidget> widgets = new LinkedList<>();
+
 	public PageVersion() {
 
 	}
@@ -113,6 +117,14 @@ public class PageVersion extends BaseEntity {
 
 	public void setContents(List<PageContent> contents) {
 		this.contents = contents;
+	}
+
+	public List<PageWidget> getWidgets() {
+		return widgets;
+	}
+
+	public void setWidgets(List<PageWidget> widgets) {
+		this.widgets = widgets;
 	}
 
 }

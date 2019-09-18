@@ -69,7 +69,11 @@ cd odh-web-components-pagebuilder/
 
 ### Configuration
 
-The application expects the following configuration options to be set, which can be provided to the application by various methods depending on how the application is packaged and deployed.
+The application expects a configuration file named `application.properties` at the location `src/main/resources` in order to run correctly. Please make a copy of the `application.properties.example` file situated in the same folder to get started.
+
+**Important note**: Please make sure to keep the `# SYSTEM SETTINGS` section of this configuration file synced with the provided example file when fetching updates in the future.
+
+The following properties need to be specified:
 
 * application.database.url (JDBC url to PostgreSQL database)
 * application.database.username (database username)
@@ -77,33 +81,22 @@ The application expects the following configuration options to be set, which can
 * application.aws.region (AWS region identifier)
 * application.aws.access-key (AWS user access key)
 * application.aws.access-secret (AWS user access secret)
+* application.users-file (path to users properties file)
 
-The following is an example configuration file
+The `application.users-file` property must contain a valid and accessible file path containing the list of application users, one line for each user. Specify the username as the key and password as the value of the property, the password must be encoded as a Bcrypt hash (ensure the prefix `$2a$` is used), which can be generated using one of these websites
+
+* [https://www.devglan.com/online-tools/bcrypt-hash-generator](https://www.devglan.com/online-tools/bcrypt-hash-generator)
+* [https://www.browserling.com/tools/bcrypt](https://www.browserling.com/tools/bcrypt)
+
+The following snippet is an example of a `application.users-file` properties file
 
 ```ini
-application.database.url = jdbc:postgresql://localhost:5432/pagebuilder
-application.database.username = pagebuilder
-application.database.password = s3cret
-application.aws.region = eu-west-1
-application.aws.access-key = ABCDEF123
-application.aws.access-secret = s3cret
+admin = $2a$04$X6hBNGIgvuTCC/2kdwFSvujZvKd9bZIfcYutHt.VOFHJIahjO1ida
+user1 = ...
+user2 = ...
 ```
 
-These values can be specified directly in the `application.properties` present in the application's source code or by using an additional configuration file that will be merged together with the one already provided (see following instructions on how to do that for the two packaging scenarios).
-
-If you choose to package and run the application as a single JAR executable, then you can specify the path of a custom properties configuration file using the following command line parameter
-
-```bash
--Dspring.config.additional-location=/path/to/custom-application.properties
-```
-
-When you package the application as WAR for deployment on Tomcat, you can specify the custom properties file using the following statement (inside the bootstrap flow of the servlet container)
-
-```bash
-export CATALINA_OPTS="${CATALINA_OPTS} -Dspring.config.additional-location=file:/path/to/custom-application.properties"
-```
-
-Moreover, it is also possible and **not mandatory** to override and alter the default set of Spring `@Bean` components by creating a dedicated Java class with the `@Configuration` annotation.
+Moreover, it is also possible and not mandatory to override and alter the default set of Spring `@Bean` components by creating a dedicated Java class with the `@Configuration` annotation.
 
 In the following example we have installed Chrome/ChromeDriver in custom locations and we run the application under a different domain/host name.
 

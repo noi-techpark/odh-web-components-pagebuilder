@@ -18,10 +18,10 @@ import it.bz.opendatahub.webcomponentspagebuilder.data.entities.PageVersion;
  */
 public class PageMetaTagsDirective implements TemplateDirectiveModel {
 
-	private PageVersion page;
+	private PageVersion pageVersion;
 
 	public PageMetaTagsDirective(PageVersion pageVersion) {
-		this.page = pageVersion;
+		this.pageVersion = pageVersion;
 	}
 
 	@SuppressWarnings("rawtypes")
@@ -30,20 +30,20 @@ public class PageMetaTagsDirective implements TemplateDirectiveModel {
 			throws TemplateException, IOException {
 		Writer out = env.getOut();
 
-		if (page.getTitle() != null && !page.getTitle().isEmpty()) {
-			out.append(String.format("<title>%s</title>\n", page.getTitle()));
+		if (pageVersion.getTitle() != null && !pageVersion.getTitle().isEmpty()) {
+			out.append(String.format("<title>%s</title>\n", pageVersion.getTitle()));
 		}
 
-		if (page.getDescription() != null && !page.getDescription().isEmpty()) {
-			out.append(String.format("<meta name=\"description\" content=\"%s\"/>\n", page.getDescription()));
+		if (pageVersion.getDescription() != null && !pageVersion.getDescription().isEmpty()) {
+			out.append(String.format("<meta name=\"description\" content=\"%s\"/>\n", pageVersion.getDescription()));
 		}
 
-		if (page.getTitle() != null && !page.getTitle().isEmpty()) {
-			out.append(String.format("<meta name=\"og:title\" content=\"%s\"/>\n", page.getTitle()));
+		if (pageVersion.getTitle() != null && !pageVersion.getTitle().isEmpty()) {
+			out.append(String.format("<meta name=\"og:title\" content=\"%s\"/>\n", pageVersion.getTitle()));
 		}
 
-		if (page.getDescription() != null && !page.getDescription().isEmpty()) {
-			out.append(String.format("<meta name=\"og:description\" content=\"%s\"/>\n", page.getDescription()));
+		if (pageVersion.getDescription() != null && !pageVersion.getDescription().isEmpty()) {
+			out.append(String.format("<meta name=\"og:description\" content=\"%s\"/>\n", pageVersion.getDescription()));
 		}
 	}
 

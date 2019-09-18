@@ -11,19 +11,19 @@ import freemarker.template.TemplateDirectiveBody;
 import freemarker.template.TemplateDirectiveModel;
 import freemarker.template.TemplateException;
 import freemarker.template.TemplateModel;
-import it.bz.opendatahub.webcomponentspagebuilder.data.entities.PageContent;
 import it.bz.opendatahub.webcomponentspagebuilder.data.entities.PageVersion;
+import it.bz.opendatahub.webcomponentspagebuilder.data.entities.PageWidget;
 
 /**
- * Custom template directive/tag for rendering the page's content blocks.
+ * Custom template directive/tag for rendering the page's widgets.
  * 
  * @author danielrampanelli
  */
-public class PageContentsDirective implements TemplateDirectiveModel {
+public class PageWidgetsDirective implements TemplateDirectiveModel {
 
 	private PageVersion pageVersion;
 
-	public PageContentsDirective(PageVersion pageVersion) {
+	public PageWidgetsDirective(PageVersion pageVersion) {
 		this.pageVersion = pageVersion;
 	}
 
@@ -33,17 +33,17 @@ public class PageContentsDirective implements TemplateDirectiveModel {
 			throws TemplateException, IOException {
 		Writer out = env.getOut();
 
-		out.append("<div id=\"odh-contents\">\n");
+		out.append("<div id=\"odh-widgets\">\n");
 
 		Set<String> assets = new HashSet<>();
 
-		for (PageContent pageContent : pageVersion.getContents()) {
-			for (String asset : pageContent.getAssets()) {
+		for (PageWidget pageWidget : pageVersion.getWidgets()) {
+			for (String asset : pageWidget.getAssets()) {
 				assets.add(asset);
 			}
 
-			out.append(String.format("<div id=\"%s\" class=\"odh-page-content\">\n%s\n</div>\n",
-					pageContent.getContentID().toString(), pageContent.getMarkup()));
+			out.append(String.format("<div id=\"%s\" class=\"odh-page-widget\">\n%s\n</div>\n",
+					pageWidget.getWidgetID().toString(), pageWidget.getMarkup()));
 		}
 
 		for (String asset : assets) {

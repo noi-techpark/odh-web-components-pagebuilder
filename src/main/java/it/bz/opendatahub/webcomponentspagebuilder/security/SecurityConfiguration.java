@@ -1,7 +1,5 @@
 package it.bz.opendatahub.webcomponentspagebuilder.security;
 
-import java.util.Arrays;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -12,13 +10,15 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.builders.WebSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.authentication.SavedRequestAwareAuthenticationSuccessHandler;
+
+import it.bz.opendatahub.webcomponentspagebuilder.data.User;
+import it.bz.opendatahub.webcomponentspagebuilder.data.UsersProvider;
 
 /**
  * Configuration of the application's security, which makes sure that the
@@ -33,7 +33,10 @@ import org.springframework.security.web.authentication.SavedRequestAwareAuthenti
 public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 
 	@Autowired
-	private PasswordEncoder passwordEncoder;
+	PasswordEncoder passwordEncoder;
+
+	@Autowired
+	UsersProvider usersProvider;
 
 	@Bean
 	public PasswordEncoder passwordEncoder() {
@@ -45,12 +48,13 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 		return new UserDetailsService() {
 			@Override
 			public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-				if (username == null || username.length() < 3) {
-					throw new UsernameNotFoundException("No user present with username: " + username);
+				User user = usersProvider.get(username);
+
+				if (user == null) {
+					throw new UsernameNotFoundException(String.format("User '%s' not found.", username));
 				}
 
-				return new org.springframework.security.core.userdetails.User(username,
-						passwordEncoder.encode(username), Arrays.asList(new SimpleGrantedAuthority("user")));
+				return user.toSpringUser();
 			}
 		};
 	}
@@ -77,7 +81,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 		http.csrf().disable().requestCache().requestCache(new LastRequestHttpSessionRequestCache()).and().headers()
 				.frameOptions().disable().and().authorizeRequests()
 				.requestMatchers(SecurityUtils::isFrameworkInternalRequest).permitAll().anyRequest()
-				.hasAnyAuthority(new String[] { "user" }).and().formLogin().loginPage("/login").permitAll()
+				.hasAnyAuthority(new String[] { "USER" }).and().formLogin().loginPage("/login").permitAll()
 				.loginProcessingUrl("/login").failureUrl("/login?error")
 				.successHandler(new SavedRequestAwareAuthenticationSuccessHandler()).and().logout()
 				.logoutSuccessUrl("/login");

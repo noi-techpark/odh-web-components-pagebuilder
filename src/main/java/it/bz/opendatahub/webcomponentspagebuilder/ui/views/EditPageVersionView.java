@@ -3,9 +3,11 @@ package it.bz.opendatahub.webcomponentspagebuilder.ui.views;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import javax.annotation.PostConstruct;
 
@@ -19,6 +21,7 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.dependency.HtmlImport;
 import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.html.Label;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.tabs.Tab;
@@ -34,8 +37,10 @@ import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouterLink;
 
 import it.bz.opendatahub.webcomponentspagebuilder.controllers.ComponentsController;
+import it.bz.opendatahub.webcomponentspagebuilder.data.PageComponent;
 import it.bz.opendatahub.webcomponentspagebuilder.data.entities.Page;
 import it.bz.opendatahub.webcomponentspagebuilder.data.entities.PageVersion;
+import it.bz.opendatahub.webcomponentspagebuilder.data.entities.PageWidget;
 import it.bz.opendatahub.webcomponentspagebuilder.data.repositories.PageRepository;
 import it.bz.opendatahub.webcomponentspagebuilder.data.repositories.PageVersionRepository;
 import it.bz.opendatahub.webcomponentspagebuilder.events.PageVersionRemovedEvent;
@@ -43,8 +48,12 @@ import it.bz.opendatahub.webcomponentspagebuilder.events.PageVersionUpdatedEvent
 import it.bz.opendatahub.webcomponentspagebuilder.rendering.PageRenderer;
 import it.bz.opendatahub.webcomponentspagebuilder.ui.MainLayout;
 import it.bz.opendatahub.webcomponentspagebuilder.ui.components.PageComponentCard;
+import it.bz.opendatahub.webcomponentspagebuilder.ui.components.PageComponentCard.ComponentActionsHandler;
 import it.bz.opendatahub.webcomponentspagebuilder.ui.components.PageEditor;
+import it.bz.opendatahub.webcomponentspagebuilder.ui.components.PageWidgetCard;
+import it.bz.opendatahub.webcomponentspagebuilder.ui.components.PageWidgetCard.WidgetActionsHandler;
 import it.bz.opendatahub.webcomponentspagebuilder.ui.controllers.PublishingController;
+import it.bz.opendatahub.webcomponentspagebuilder.ui.dialogs.PageElementConfigurationDialog;
 
 /**
  * View for editing the contents (using drag-drop) and other related settings
@@ -54,7 +63,8 @@ import it.bz.opendatahub.webcomponentspagebuilder.ui.controllers.PublishingContr
  */
 @Route(value = EditPageVersionView.ROUTE, layout = MainLayout.class)
 @HtmlImport("frontend://styles/shared-styles.html")
-public class EditPageVersionView extends VerticalLayout implements HasUrlParameter<String> {
+public class EditPageVersionView extends VerticalLayout
+		implements HasUrlParameter<String>, ComponentActionsHandler, WidgetActionsHandler {
 
 	private static final int MINIMUM_VISIBLE_DURATION_OF_SAVE = 500;
 
@@ -82,6 +92,8 @@ public class EditPageVersionView extends VerticalLayout implements HasUrlParamet
 
 	private PageVersion pageVersion;
 
+	private VerticalLayout widgetsLayout;
+
 	private PageEditor editor;
 
 	private Div availableComponents;
@@ -91,6 +103,8 @@ public class EditPageVersionView extends VerticalLayout implements HasUrlParamet
 	private Binder<PageVersion> binder;
 
 	private Div saveStatus;
+
+	private Label widgetsPlaceholder;
 
 	@PostConstruct
 	private void postConstruct() {
@@ -122,47 +136,7 @@ public class EditPageVersionView extends VerticalLayout implements HasUrlParamet
 
 		editor = new PageEditor();
 
-		editor.setUpdateHandler(() -> {
-			new Thread(() -> {
-				getUI().ifPresent(ui -> {
-					ui.access(() -> {
-						long time = -System.currentTimeMillis();
-
-						saveStatus.setText("Saving...");
-
-						ui.push();
-
-						BinderValidationStatus<PageVersion> validation = binder.validate();
-						if (validation.isOk()) {
-							PageVersion bean = binder.getBean();
-							bean.setUpdatedAt(LocalDateTime.now());
-
-							pageVersion = versionsRepo.save(bean);
-
-							binder.setBean(pageVersion);
-							editor.setPageVersion(pageVersion);
-
-							eventPublisher.publishEvent(new PageVersionUpdatedEvent(pageVersion));
-						}
-
-						time += System.currentTimeMillis();
-
-						if (time < MINIMUM_VISIBLE_DURATION_OF_SAVE) {
-							try {
-								Thread.sleep(MINIMUM_VISIBLE_DURATION_OF_SAVE - time);
-							} catch (InterruptedException ee) {
-								// noop
-							}
-						}
-
-						saveStatus.setText(String.format("Saved on %s",
-								pageVersion.getUpdatedAt().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss"))));
-
-						ui.push();
-					});
-				});
-			}).start();
-		});
+		editor.setUpdateHandler(() -> save());
 
 		Div pageTitleWrapper = new Div(pageTitle);
 		pageTitleWrapper.addClassName("contains-page-title");
@@ -172,7 +146,10 @@ public class EditPageVersionView extends VerticalLayout implements HasUrlParamet
 		saveStatus = new Div();
 		saveStatus.addClassName("contains-page-save-status");
 
-		HorizontalLayout pageTitleAndStatus = new HorizontalLayout(pageTitleWrapper, saveStatus);
+		VerticalLayout pageTitleAndStatus = new VerticalLayout(pageTitleWrapper, saveStatus);
+		pageTitleAndStatus.setMargin(false);
+		pageTitleAndStatus.setPadding(false);
+		pageTitleAndStatus.setSpacing(false);
 
 		HorizontalLayout headerLayout = new HorizontalLayout();
 		headerLayout.addClassName("page-header");
@@ -196,7 +173,7 @@ public class EditPageVersionView extends VerticalLayout implements HasUrlParamet
 
 		componentsController.getAll().stream().sorted((a, b) -> a.getTitle().compareTo(b.getTitle()))
 				.forEach(availableComponent -> {
-					availableComponents.add(new PageComponentCard(availableComponent));
+					availableComponents.add(new PageComponentCard(availableComponent, EditPageVersionView.this));
 				});
 
 		HorizontalLayout contentLayout = new HorizontalLayout();
@@ -204,16 +181,20 @@ public class EditPageVersionView extends VerticalLayout implements HasUrlParamet
 		contentLayout.setSpacing(true);
 		contentLayout.setSizeFull();
 
-		Tab componentsTab = new Tab("COMPONENTS");
+		Tab widgetsTab = new Tab("WIDGETS");
 		Tab metadataTab = new Tab("METADATA");
 
 		TextField pageTitle = new TextField();
 		pageTitle.setLabel("TITLE");
 		pageTitle.setWidthFull();
 
+		pageTitle.addValueChangeListener(e -> save());
+
 		TextArea pageDescription = new TextArea();
 		pageDescription.setLabel("DESCRIPTION");
 		pageDescription.setWidthFull();
+
+		pageDescription.addValueChangeListener(e -> save());
 
 		binder = new Binder<>(PageVersion.class);
 		binder.forField(pageTitle).bind("title");
@@ -227,12 +208,31 @@ public class EditPageVersionView extends VerticalLayout implements HasUrlParamet
 		metadataLayout.add(pageTitle);
 		metadataLayout.add(pageDescription);
 
+		widgetsLayout = new VerticalLayout();
+		widgetsLayout.addClassName("contains-widgets");
+		widgetsLayout.setMargin(false);
+		widgetsLayout.setPadding(false);
+		widgetsLayout.setSpacing(false);
+		widgetsLayout.setWidthFull();
+
+		widgetsPlaceholder = new Label("There are currently no widgets defined for this page.");
+		widgetsPlaceholder.addClassName("placeholder");
+
+		VerticalLayout widgetsWrapper = new VerticalLayout();
+		widgetsWrapper.setMargin(false);
+		widgetsWrapper.setPadding(false);
+		widgetsWrapper.setSpacing(false);
+		widgetsWrapper.add(widgetsLayout);
+		widgetsWrapper.add(widgetsPlaceholder);
+
+		widgetsPlaceholder.setVisible(false);
+
 		Map<Tab, Component> tabsToPages = new HashMap<>();
-		tabsToPages.put(componentsTab, availableComponents);
+		tabsToPages.put(widgetsTab, widgetsWrapper);
 		tabsToPages.put(metadataTab, metadataLayout);
 
 		Tabs sidebarTabs = new Tabs();
-		sidebarTabs.add(componentsTab);
+		sidebarTabs.add(widgetsTab);
 		sidebarTabs.add(metadataTab);
 		sidebarTabs.setFlexGrowForEnclosedTabs(1);
 		sidebarTabs.setWidthFull();
@@ -245,13 +245,14 @@ public class EditPageVersionView extends VerticalLayout implements HasUrlParamet
 		tabsToPages.values().forEach(page -> page.setVisible(false));
 		tabsToPages.get(sidebarTabs.getSelectedTab()).setVisible(true);
 
-		Div sidebarComponents = new Div(availableComponents, metadataLayout);
+		Div sidebarComponents = new Div(widgetsWrapper, metadataLayout);
 		sidebarComponents.setWidthFull();
 
 		VerticalLayout sidebar = new VerticalLayout();
 		sidebar.addClassName("contains-sidebar");
 		sidebar.setMargin(false);
 		sidebar.setPadding(false);
+		sidebar.setWidthFull();
 
 		sidebar.add(sidebarTabs);
 		sidebar.setFlexGrow(0, sidebarTabs);
@@ -259,10 +260,18 @@ public class EditPageVersionView extends VerticalLayout implements HasUrlParamet
 		sidebar.add(sidebarComponents);
 		sidebar.setFlexGrow(1, sidebarComponents);
 
-		contentLayout.add(editorWrapper);
+		VerticalLayout library = new VerticalLayout();
+		library.addClassName("contains-library");
+		library.setMargin(false);
+		library.setPadding(false);
+		library.add(availableComponents);
+
 		contentLayout.add(sidebar);
-		contentLayout.setFlexGrow(1, editorWrapper);
+		contentLayout.add(editorWrapper);
+		contentLayout.add(library);
 		contentLayout.setFlexGrow(0, sidebar);
+		contentLayout.setFlexGrow(1, editorWrapper);
+		contentLayout.setFlexGrow(0, library);
 
 		add(headerLayout);
 		add(contentLayout);
@@ -272,6 +281,109 @@ public class EditPageVersionView extends VerticalLayout implements HasUrlParamet
 		setPadding(false);
 		setSizeFull();
 		setSpacing(false);
+	}
+
+	private void save() {
+		new Thread(() -> {
+			getUI().ifPresent(ui -> {
+				ui.access(() -> {
+					long time = -System.currentTimeMillis();
+
+					saveStatus.setText("Saving...");
+
+					ui.push();
+
+					BinderValidationStatus<PageVersion> validation = binder.validate();
+					if (validation.isOk()) {
+						PageVersion bean = binder.getBean();
+						bean.setUpdatedAt(LocalDateTime.now());
+
+						pageVersion = versionsRepo.save(bean);
+
+						binder.setBean(pageVersion);
+						editor.setPageVersion(pageVersion);
+
+						eventPublisher.publishEvent(new PageVersionUpdatedEvent(pageVersion));
+					}
+
+					time += System.currentTimeMillis();
+
+					if (time < MINIMUM_VISIBLE_DURATION_OF_SAVE) {
+						try {
+							Thread.sleep(MINIMUM_VISIBLE_DURATION_OF_SAVE - time);
+						} catch (InterruptedException ee) {
+							// noop
+						}
+					}
+
+					saveStatus.setText(String.format("Saved on %s",
+							pageVersion.getUpdatedAt().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss"))));
+
+					ui.push();
+				});
+			});
+		}).start();
+	}
+
+	@Override
+	public void addComponentToContents(PageComponent component) {
+		editor.addContent(component);
+	}
+
+	@Override
+	public void addComponentToWidgets(PageComponent component) {
+		PageWidget widget = editor.addWidget(component);
+
+		save();
+
+		widgetsLayout.add(new PageWidgetCard(component, widget, this));
+
+		widgetsPlaceholder.setVisible(false);
+	}
+
+	@Override
+	public void editWidget(PageWidget pageWidget) {
+		List<PageWidget> matches = pageVersion.getWidgets().stream()
+				.filter(widget -> widget.getWidgetID().equals(pageWidget.getWidgetID())).collect(Collectors.toList());
+
+		if (!matches.isEmpty()) {
+			PageWidget widget = matches.get(0);
+
+			PageElementConfigurationDialog dialog = new PageElementConfigurationDialog(widget);
+
+			dialog.setSaveHandler((updatedMarkup) -> {
+				widget.setMarkup(updatedMarkup);
+
+				editor.updateWidget(widget.getWidgetID(), updatedMarkup);
+
+				save();
+			});
+
+			dialog.open();
+		}
+	}
+
+	@Override
+	public void removeWidget(PageWidget widget) {
+		editor.removeWidget(widget);
+
+		pageVersion.setWidgets(pageVersion.getWidgets().stream()
+				.filter(content -> !content.getWidgetID().equals(widget.getWidgetID())).collect(Collectors.toList()));
+
+		save();
+
+		List<Component> components = widgetsLayout.getChildren().collect(Collectors.toList());
+		for (Component component : components) {
+			PageWidgetCard card = (PageWidgetCard) component;
+
+			if (card.getWidget().getWidgetID().equals(widget.getWidgetID())) {
+				widgetsLayout.remove(component);
+			}
+		}
+
+		if (pageVersion.getWidgets().isEmpty()) {
+			widgetsPlaceholder.setVisible(true);
+		}
 	}
 
 	@Override
@@ -289,6 +401,19 @@ public class EditPageVersionView extends VerticalLayout implements HasUrlParamet
 
 		editor.bind(pageVersion);
 		binder.setBean(pageVersion);
+
+		widgetsLayout.removeAll();
+
+		for (PageWidget widget : pageVersion.getWidgets()) {
+			PageComponent component = componentsController.getByUid(widget.getUid());
+			if (component != null) {
+				widgetsLayout.add(new PageWidgetCard(component, widget, this));
+			}
+		}
+
+		if (pageVersion.getWidgets().isEmpty()) {
+			widgetsPlaceholder.setVisible(true);
+		}
 
 		saveStatus.setText(String.format("Saved on %s",
 				pageVersion.getUpdatedAt().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss"))));

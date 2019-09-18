@@ -1,5 +1,11 @@
 package it.bz.opendatahub.webcomponentspagebuilder;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.util.Map;
+import java.util.Properties;
+
 import javax.sql.DataSource;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,14 +18,17 @@ import org.springframework.core.env.Environment;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
+import com.google.common.base.Splitter;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 
 import it.bz.opendatahub.webcomponentspagebuilder.data.CompositePageComponentsProvider;
 import it.bz.opendatahub.webcomponentspagebuilder.data.DefaultDomainsProvider;
 import it.bz.opendatahub.webcomponentspagebuilder.data.DefaultPageComponentsProvider;
+import it.bz.opendatahub.webcomponentspagebuilder.data.DefaultUsersProvider;
 import it.bz.opendatahub.webcomponentspagebuilder.data.DomainsProvider;
 import it.bz.opendatahub.webcomponentspagebuilder.data.PageComponentsProvider;
+import it.bz.opendatahub.webcomponentspagebuilder.data.UsersProvider;
 import it.bz.opendatahub.webcomponentspagebuilder.data.WebComponentsStorePageComponentsProvider;
 import it.bz.opendatahub.webcomponentspagebuilder.deployment.AwsBasedDeploymentPipeline;
 import it.bz.opendatahub.webcomponentspagebuilder.rendering.screenshots.ChromeWebDriverScreenshotRenderer;
@@ -55,6 +64,12 @@ public class ApplicationConfiguration {
 	@Value("${application.aws.accessSecret:#{null}}")
 	private String awsAccessSecret;
 
+	@Value("${application.users:#{null}}")
+	private String users;
+
+	@Value("${application.users-file:#{null}}")
+	private String usersFile;
+
 	@Bean(destroyMethod = "close")
 	@Lazy
 	public DataSource dataSource(Environment env) {
@@ -65,6 +80,43 @@ public class ApplicationConfiguration {
 		config.setPassword(databasePassword);
 
 		return new HikariDataSource(config);
+	}
+
+	@Bean
+	@Lazy
+	public UsersProvider usersProvider() {
+		DefaultUsersProvider provider = new DefaultUsersProvider();
+
+		if (users != null) {
+			Map<String, String> splittedUsers = Splitter.on(",").omitEmptyStrings().trimResults()
+					.withKeyValueSeparator(":").split(users);
+
+			for (String username : splittedUsers.keySet()) {
+				provider.add(username, splittedUsers.get(username));
+			}
+		}
+
+		if (usersFile != null) {
+			File file = new File(usersFile);
+
+			if (file.exists()) {
+				Properties properties = new Properties();
+
+				try {
+					properties.load(new FileInputStream(file));
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+
+				for (Object key : properties.keySet()) {
+					String username = key.toString();
+
+					provider.add(username, properties.getProperty(username));
+				}
+			}
+		}
+
+		return provider;
 	}
 
 	@Bean
