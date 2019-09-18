@@ -40,7 +40,7 @@ pipeline {
                 
                 sh 'sed -i -e "s%\\(application.aws.region\\s*=\\).*\\$%\\1${AWS_REGION}%" src/main/resources/application.properties'
                 sh 'sed -i -e "s%\\(application.aws.access-key\\s*=\\).*\\$%\\1${AWS_ACCESS_KEY}%" src/main/resources/application.properties'
-                sh 'sed -i -e "s%\\(application.aws.secret-key\\s*=\\).*\\$%\\1${AWS_SECRET_KEY}%" src/main/resources/application.properties'
+                sh 'sed -i -e "s%\\(application.aws.access-secret\\s*=\\).*\\$%\\1${AWS_SECRET_KEY}%" src/main/resources/application.properties'
                 
                 sh 'sed -i -e "s%\\(application.users-file\\s*=\\).*\\$%\\1application.users-file%" src/main/resources/application.properties'
             }
