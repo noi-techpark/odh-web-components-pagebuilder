@@ -46,7 +46,7 @@ pipeline {
         }
         stage('Test') {
             steps {
-                sh 'mvn -B -U clean test'
+                sh 'mvn -B -U clean test verify'
             }
         }
         stage('Deploy') {
