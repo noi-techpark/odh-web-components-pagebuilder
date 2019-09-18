@@ -32,6 +32,7 @@ pipeline {
 
                 sh 'cp src/main/resources/application.properties.example src/main/resources/application.properties'
                 sh 'cp ${USERS_FILE} src/main/resources/application.users-file'
+                sh 'chmod 644 src/main/resources/application.users-file'
                 
                 sh 'sed -i -e "s%\\(application.database.url\\s*=\\).*\\$%\\1${POSTGRES_URL}%" src/main/resources/application.properties'
                 sh 'sed -i -e "s%\\(application.database.username\\s*=\\).*\\$%\\1${POSTGRES_USERNAME}%" src/main/resources/application.properties'
