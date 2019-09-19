@@ -10,7 +10,7 @@ pipeline {
         TESTSERVER_TOMCAT_ENDPOINT = "http://pagebuilder.tomcat02.testingmachine.eu:8080/manager/text"
         TESTSERVER_TOMCAT_CREDENTIALS = credentials('testserver-tomcat8-credentials')
 
-        POSTGRES_URL = "jdbc:postgresql://test-pg-bdp.co90ybcr8iim.eu-west-1.rds.amazonaws.com:5432/webcompbuilder"
+        POSTGRES_URL = "jdbc:postgresql://test-pg-bdp.co90ybcr8iim.eu-west-1.rds.amazonaws.com:5432/webcompbuilder?currentSchema=public"
         POSTGRES_USERNAME = credentials('pagebuilder-test-postgres-username')
         POSTGRES_PASSWORD = credentials('pagebuilder-test-postgres-password')
 
