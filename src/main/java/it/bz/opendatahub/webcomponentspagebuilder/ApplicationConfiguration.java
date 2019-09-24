@@ -58,10 +58,10 @@ public class ApplicationConfiguration {
 	@Value("${application.aws.region:#{null}}")
 	private String awsRegionName;
 
-	@Value("${application.aws.accessKey:#{null}}")
+	@Value("${application.aws.access-key:#{null}}")
 	private String awsAccessKey;
 
-	@Value("${application.aws.accessSecret:#{null}}")
+	@Value("${application.aws.access-secret:#{null}}")
 	private String awsAccessSecret;
 
 	@Value("${application.users:#{null}}")
