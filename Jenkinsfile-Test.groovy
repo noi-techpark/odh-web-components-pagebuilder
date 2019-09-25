@@ -18,7 +18,7 @@ pipeline {
         AWS_ACCESS_KEY = credentials('pagebuilder-test-s3-access-key')
         AWS_SECRET_KEY = credentials('pagebuilder-test-s3-secret-key')
 
-        USERS_FILE = credentials('pagebuilder-test-users-file')
+        USERS_FILE = '/var/data/pagebuilder/application.users-file'
     }
 
     stages {
@@ -31,8 +31,6 @@ pipeline {
                 sh 'echo "</settings>" >> ~/.m2/settings.xml'
 
                 sh 'cp src/main/resources/application.properties.example src/main/resources/application.properties'
-                sh 'cp ${USERS_FILE} src/main/resources/application.users-file'
-                sh 'chmod 644 src/main/resources/application.users-file'
                 
                 sh 'sed -i -e "s%\\(application.database.url\\s*=\\).*\\$%\\1${POSTGRES_URL}%" src/main/resources/application.properties'
                 sh 'sed -i -e "s%\\(application.database.username\\s*=\\).*\\$%\\1${POSTGRES_USERNAME}%" src/main/resources/application.properties'
@@ -42,7 +40,7 @@ pipeline {
                 sh 'sed -i -e "s%\\(application.aws.access-key\\s*=\\).*\\$%\\1${AWS_ACCESS_KEY}%" src/main/resources/application.properties'
                 sh 'sed -i -e "s%\\(application.aws.access-secret\\s*=\\).*\\$%\\1${AWS_SECRET_KEY}%" src/main/resources/application.properties'
                 
-                sh 'sed -i -e "s%\\(application.users-file\\s*=\\).*\\$%\\1application.users-file%" src/main/resources/application.properties'
+                sh 'sed -i -e "s%\\(application.users-file\\s*=\\).*\\$%\\1${USERS_FILE}%" src/main/resources/application.properties'
             }
         }
         stage('Test') {
