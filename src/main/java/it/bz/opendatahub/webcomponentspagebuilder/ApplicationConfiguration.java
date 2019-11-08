@@ -167,7 +167,7 @@ public class ApplicationConfiguration {
 	@Bean
 	@Lazy
 	public ApplicationDeployment deployment() {
-		return new ApplicationDeployment("http://pagebuilder.opendatahub.testingmachine.eu");
+		return new ApplicationDeployment("https://pagebuilder.opendatahub.testingmachine.eu");
 	}
 
 }
