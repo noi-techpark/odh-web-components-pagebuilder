@@ -70,6 +70,15 @@ public class ApplicationConfiguration {
 	@Value("${application.users-file:#{null}}")
 	private String usersFile;
 
+	@Value("${application.base-url:#{null}}")
+	private String baseUrl;
+
+	@Value("${application.pages.domain-name:#{null}}")
+	private String pagesDomainName;
+
+	@Value("${application.pages.allow-subdomains:#{true}}")
+	private Boolean pagesSubdomainsAllowed;
+
 	@Bean(destroyMethod = "close")
 	@Lazy
 	public DataSource dataSource(Environment env) {
@@ -124,7 +133,7 @@ public class ApplicationConfiguration {
 	public DomainsProvider domainsProvider() {
 		DefaultDomainsProvider provider = new DefaultDomainsProvider();
 
-		provider.add("pagebuildersites.opendatahub.testingmachine.eu", true,
+		provider.add(String.format("https://%s", pagesDomainName), pagesSubdomainsAllowed,
 				new AwsBasedDeploymentPipeline(awsRegionName, awsAccessKey, awsAccessSecret));
 
 		return provider;
@@ -167,7 +176,7 @@ public class ApplicationConfiguration {
 	@Bean
 	@Lazy
 	public ApplicationDeployment deployment() {
-		return new ApplicationDeployment("http://pagebuilder.opendatahub.testingmachine.eu");
+		return new ApplicationDeployment(baseUrl);
 	}
 
 }

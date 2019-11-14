@@ -73,28 +73,93 @@ The application expects a configuration file named `application.properties` at t
 
 **Important note**: Please make sure to keep the `# SYSTEM SETTINGS` section of this configuration file synced with the provided example file when fetching updates in the future.
 
-The following properties need to be specified:
+#### application.database.url
 
-* application.database.url (JDBC url to PostgreSQL database)
-* application.database.username (database username)
-* application.database.password (database password)
-* application.aws.region (AWS region identifier)
-* application.aws.access-key (AWS user access key)
-* application.aws.access-secret (AWS user access secret)
-* application.users-file (path to users properties file)
+    Type: String
+    Format: URL
+    Required: true
 
-The `application.users-file` property must contain a valid and accessible file path containing the list of application users, one line for each user. Specify the username as the key and password as the value of the property, the password must be encoded as a Bcrypt hash (ensure the prefix `$2a$` is used), which can be generated using one of these websites
+JDBC url to the PostgreSQL database.
+
+#### application.database.username
+
+    Type: String
+    Required: true
+
+Username of the PostgreSQL database user.
+
+#### application.database.password
+
+    Type: String
+    Required: true
+
+Password of the PostgreSQL database user.
+
+#### application.aws.region
+
+    Type: String
+    Format: AWS region identifier
+    Required: true
+
+AWS region in which the "local" resources will be configured.
+
+#### application.aws.access-key
+
+    Type: String
+    Required: true
+
+Access key for the AWS user/account.
+
+#### application.aws.access-secret
+
+    Type: String
+    Required: true
+
+Access secret for the AWS user/account.
+
+#### application.users-file
+
+    Type: String
+    Format: Path to file
+    Required: true
+
+The referenced file path contains the list of application users, one line for each user. Specify the username as the key and password as the value of the property, the password must be encoded as a Bcrypt hash (ensure the prefix `$2a$` is used), which can be generated using one of these websites
 
 * [https://www.devglan.com/online-tools/bcrypt-hash-generator](https://www.devglan.com/online-tools/bcrypt-hash-generator)
 * [https://www.browserling.com/tools/bcrypt](https://www.browserling.com/tools/bcrypt)
 
-The following snippet is an example of a `application.users-file` properties file
+The following snippet is an example of such a properties file
 
 ```ini
 admin = $2a$04$X6hBNGIgvuTCC/2kdwFSvujZvKd9bZIfcYutHt.VOFHJIahjO1ida
 user1 = ...
 user2 = ...
 ```
+
+#### application.base-url
+
+    Type: String
+    Format: URL
+    Required: true
+
+Application's base url including schema and without trailing slashes.
+
+#### application.pages.domain-name
+
+    Type: String
+    Format: FQDN
+    Required: true
+
+Primary domain for the deployment of pages and sites. If you need to use mulitple domains, you can [customise](#customisation) the application configuration and skip this configuration option.
+
+#### application.pages.allow-subdomains
+
+    Type: Boolean
+    Required: true
+
+Allow usage of subdomains for the primary pages domain.
+
+### Customisation
 
 Moreover, it is also possible and not mandatory to override and alter the default set of Spring `@Bean` components by creating a dedicated Java class with the `@Configuration` annotation.
 

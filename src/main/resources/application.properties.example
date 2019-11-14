@@ -20,3 +20,6 @@ application.aws.region = ${AWS_REGION}
 application.aws.access-key = ${AWS_ACCESS_KEY}
 application.aws.access-secret = ${AWS_SECRET_KEY}
 application.users-file = ${USERS_FILE}
+application.base-url = ${BASE_URL}
+application.pages.domain-name = ${PAGES_DOMAIN_NAME}
+application.pages.allow-subdomains = ${PAGES_ALLOW_SUBDOMAINS}
