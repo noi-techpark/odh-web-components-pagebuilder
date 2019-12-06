@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
@@ -24,6 +25,7 @@ import com.amazonaws.services.certificatemanager.model.ResourceRecord;
 import com.amazonaws.services.cloudfront.AmazonCloudFront;
 import com.amazonaws.services.cloudfront.AmazonCloudFrontClientBuilder;
 import com.amazonaws.services.cloudfront.model.Aliases;
+import com.amazonaws.services.cloudfront.model.CacheBehavior;
 import com.amazonaws.services.cloudfront.model.CacheBehaviors;
 import com.amazonaws.services.cloudfront.model.CookiePreference;
 import com.amazonaws.services.cloudfront.model.CreateDistributionRequest;
@@ -44,6 +46,8 @@ import com.amazonaws.services.cloudfront.model.PriceClass;
 import com.amazonaws.services.cloudfront.model.S3OriginConfig;
 import com.amazonaws.services.cloudfront.model.SSLSupportMethod;
 import com.amazonaws.services.cloudfront.model.TrustedSigners;
+import com.amazonaws.services.cloudfront.model.UpdateDistributionRequest;
+import com.amazonaws.services.cloudfront.model.UpdateDistributionResult;
 import com.amazonaws.services.cloudfront.model.ViewerCertificate;
 import com.amazonaws.services.cloudfront.model.ViewerProtocolPolicy;
 import com.amazonaws.services.route53.AmazonRoute53;
@@ -73,19 +77,35 @@ import it.bz.opendatahub.webcomponentspagebuilder.deployment.DeploymentPayload.P
 
 /**
  * Deployment pipeline for pushing a page to an AWS-based infrastructure,
- * constituted mainly of S3 for file storage.
+ * constituted of Route53 (DNS), CloudFront (Serving requests) and S3 (file
+ * storage).
  * 
  * @author danielrampanelli
  */
 public class AwsBasedDeploymentPipeline implements DeploymentPipeline {
 
-	private String regionName;
+	private AWSCertificateManager certificateManager;
 
-	private AWSStaticCredentialsProvider credentialsProvider;
+	private AmazonRoute53 route53;
+
+	private AmazonCloudFront cloudfront;
+
+	private AmazonS3 s3;
 
 	public AwsBasedDeploymentPipeline(String regionName, String accessKey, String accessSecret) {
-		this.regionName = regionName;
-		this.credentialsProvider = new AWSStaticCredentialsProvider(new BasicAWSCredentials(accessKey, accessSecret));
+		AWSStaticCredentialsProvider credentialsProvider = new AWSStaticCredentialsProvider(
+				new BasicAWSCredentials(accessKey, accessSecret));
+
+		this.certificateManager = AWSCertificateManagerClientBuilder.standard().withRegion(regionName)
+				.withCredentials(credentialsProvider).build();
+
+		this.route53 = AmazonRoute53ClientBuilder.standard().withCredentials(credentialsProvider).withRegion(regionName)
+				.build();
+
+		this.cloudfront = AmazonCloudFrontClientBuilder.standard().withRegion(regionName)
+				.withCredentials(credentialsProvider).build();
+
+		this.s3 = AmazonS3ClientBuilder.standard().withRegion(regionName).withCredentials(credentialsProvider).build();
 	}
 
 	private String generateBucketName(DeploymentManifest manifest) {
@@ -94,18 +114,18 @@ public class AwsBasedDeploymentPipeline implements DeploymentPipeline {
 
 	@Override
 	public void deploy(DeploymentManifest manifest, DeploymentPayload payload) {
-		AWSCertificateManager certificateManager = AWSCertificateManagerClientBuilder.standard().withRegion(regionName)
-				.withCredentials(credentialsProvider).build();
+		String bucketName = deployBucket(manifest, payload);
 
-		AmazonRoute53 route53 = AmazonRoute53ClientBuilder.standard().withCredentials(credentialsProvider)
-				.withRegion(regionName).build();
+		HostedZone hostedZone = ensureHostedZone(manifest);
 
-		AmazonCloudFront cloudfront = AmazonCloudFrontClientBuilder.standard().withRegion(regionName)
-				.withCredentials(credentialsProvider).build();
+		CertificateDetail certificate = ensureCertificate(manifest, hostedZone);
 
-		AmazonS3 s3 = AmazonS3ClientBuilder.standard().withRegion(regionName).withCredentials(credentialsProvider)
-				.build();
+		Distribution distribution = ensureDistribution(manifest, bucketName, certificate);
 
+		ensureDomainRecords(manifest, hostedZone, distribution);
+	}
+
+	private String deployBucket(DeploymentManifest manifest, DeploymentPayload payload) {
 		String bucketName = generateBucketName(manifest);
 
 		if (s3.listBuckets().stream().filter(bucket -> bucket.getName().equals(bucketName)).count() == 0) {
@@ -141,6 +161,10 @@ public class AwsBasedDeploymentPipeline implements DeploymentPipeline {
 			s3.setObjectAcl(bucketName, key, CannedAccessControlList.PublicRead);
 		}
 
+		return bucketName;
+	}
+
+	private HostedZone ensureHostedZone(DeploymentManifest manifest) {
 		List<HostedZone> hostedZones = route53.listHostedZones().getHostedZones().stream()
 				.filter(zone -> zone.getName().equals(manifest.getDomainName() + ".")).collect(Collectors.toList());
 
@@ -161,6 +185,10 @@ public class AwsBasedDeploymentPipeline implements DeploymentPipeline {
 			hostedZone = hostedZones.get(0);
 		}
 
+		return hostedZone;
+	}
+
+	private CertificateDetail ensureCertificate(DeploymentManifest manifest, HostedZone hostedZone) {
 		ListCertificatesRequest listCertificatesRequest = new ListCertificatesRequest();
 
 		ListCertificatesResult listCertificatesResult = certificateManager.listCertificates(listCertificatesRequest);
@@ -238,6 +266,11 @@ public class AwsBasedDeploymentPipeline implements DeploymentPipeline {
 			certificate.setDomainName(certificateSummary.getDomainName());
 		}
 
+		return certificate;
+	}
+
+	private Distribution ensureDistribution(DeploymentManifest manifest, String bucketName,
+			CertificateDetail certificate) {
 		ListDistributionsRequest listDistributionsRequest = new ListDistributionsRequest();
 
 		ListDistributionsResult listDistributionsResult = cloudfront.listDistributions(listDistributionsRequest);
@@ -248,15 +281,15 @@ public class AwsBasedDeploymentPipeline implements DeploymentPipeline {
 							.filter(item -> item.equals(manifest.getDomainName())).count() > 0;
 				}).collect(Collectors.toList());
 
+		String originDomainName = String.format("%s.s3.amazonaws.com", bucketName);
+
 		Distribution distribution = null;
 
 		if (distributions.isEmpty()) {
 			Aliases aliases = new Aliases().withItems(manifest.getDomainName()).withQuantity(1);
 
-			Origins origins = new Origins().withItems(
-					new Origin().withId(bucketName).withDomainName(String.format("%s.s3.amazonaws.com", bucketName))
-							.withS3OriginConfig(new S3OriginConfig().withOriginAccessIdentity("")))
-					.withQuantity(1);
+			Origins origins = new Origins().withItems(new Origin().withId(bucketName).withDomainName(originDomainName)
+					.withS3OriginConfig(new S3OriginConfig().withOriginAccessIdentity(""))).withQuantity(1);
 
 			DistributionConfig distributionConfig = new DistributionConfig();
 			distributionConfig.setAliases(aliases);
@@ -298,8 +331,41 @@ public class AwsBasedDeploymentPipeline implements DeploymentPipeline {
 
 			distribution = new Distribution(distributionSummary.getId(), distributionSummary.getStatus(),
 					distributionSummary.getDomainName());
+
+			DistributionConfig configuration = distribution.getDistributionConfig();
+
+			if (configuration.getOrigins().getItems().stream()
+					.filter(origin -> origin.getDomainName().equals(originDomainName)).count() == 0) {
+				configuration.getOrigins().getItems()
+						.add(new Origin().withId(bucketName).withDomainName(originDomainName)
+								.withS3OriginConfig(new S3OriginConfig().withOriginAccessIdentity("")));
+
+				configuration.getCacheBehaviors().getItems()
+						.add(new CacheBehavior()
+								.withPathPattern(StringUtils.isEmpty(manifest.getPathName())
+										? String.format("%s/*", manifest.getPathName())
+										: "/*")
+								.withTargetOriginId(bucketName)
+								.withForwardedValues(new ForwardedValues().withQueryString(false)
+										.withCookies(new CookiePreference().withForward("none")))
+								.withTrustedSigners(new TrustedSigners().withQuantity(0).withEnabled(false))
+								.withViewerProtocolPolicy(ViewerProtocolPolicy.AllowAll).withMinTTL(36000L));
+
+				UpdateDistributionRequest updateDistributionRequest = new UpdateDistributionRequest()
+						.withDistributionConfig(configuration);
+
+				UpdateDistributionResult updateDistributionResult = cloudfront
+						.updateDistribution(updateDistributionRequest);
+
+				cloudfront.waiters().distributionDeployed().run(new WaiterParameters<>(
+						new GetDistributionRequest().withId(updateDistributionResult.getDistribution().getId())));
+			}
 		}
 
+		return distribution;
+	}
+
+	private void ensureDomainRecords(DeploymentManifest manifest, HostedZone hostedZone, Distribution distribution) {
 		Change validationChange = new Change().withAction("UPSERT")
 				.withResourceRecordSet(new ResourceRecordSet().withName(manifest.getDomainName()).withType("CNAME")
 						.withTTL(300L).withResourceRecords(
@@ -317,15 +383,57 @@ public class AwsBasedDeploymentPipeline implements DeploymentPipeline {
 
 	@Override
 	public void undeploy(DeploymentManifest manifest) {
-		// TODO remove CloudFront distribution
-
-		// TODO provide fallback for "orphaned" Route53 records
-
-		AmazonS3 s3 = AmazonS3ClientBuilder.standard().withRegion(regionName).withCredentials(credentialsProvider)
-				.build();
-
 		String bucketName = generateBucketName(manifest);
 
+		cleanupDistribution(manifest, bucketName);
+
+		cleanupBucket(manifest, bucketName);
+	}
+
+	private void cleanupDistribution(DeploymentManifest manifest, String bucketName) {
+		ListDistributionsRequest listDistributionsRequest = new ListDistributionsRequest();
+
+		ListDistributionsResult listDistributionsResult = cloudfront.listDistributions(listDistributionsRequest);
+
+		List<DistributionSummary> distributions = listDistributionsResult.getDistributionList().getItems().stream()
+				.filter(distribution -> {
+					return distribution.getAliases().getItems().stream()
+							.filter(item -> item.equals(manifest.getDomainName())).count() > 0;
+				}).collect(Collectors.toList());
+
+		String originDomainName = String.format("%s.s3.amazonaws.com", bucketName);
+
+		if (!distributions.isEmpty()) {
+			DistributionSummary distributionSummary = distributions.get(0);
+
+			Distribution distribution = new Distribution(distributionSummary.getId(), distributionSummary.getStatus(),
+					distributionSummary.getDomainName());
+
+			DistributionConfig configuration = distribution.getDistributionConfig();
+
+			Origins origins = configuration.getOrigins();
+
+			origins.setItems(origins.getItems().stream()
+					.filter(origin -> !origin.getDomainName().equals(originDomainName)).collect(Collectors.toList()));
+
+			CacheBehaviors cacheBehaviors = configuration.getCacheBehaviors();
+
+			cacheBehaviors.setItems(cacheBehaviors.getItems().stream()
+					.filter(cacheBehavior -> !cacheBehavior.getTargetOriginId().equals(bucketName))
+					.collect(Collectors.toList()));
+
+			UpdateDistributionRequest updateDistributionRequest = new UpdateDistributionRequest()
+					.withDistributionConfig(configuration);
+
+			UpdateDistributionResult updateDistributionResult = cloudfront
+					.updateDistribution(updateDistributionRequest);
+
+			cloudfront.waiters().distributionDeployed().run(new WaiterParameters<>(
+					new GetDistributionRequest().withId(updateDistributionResult.getDistribution().getId())));
+		}
+	}
+
+	private void cleanupBucket(DeploymentManifest manifest, String bucketName) {
 		ObjectListing objects = s3.listObjects(bucketName);
 		for (S3ObjectSummary summary : objects.getObjectSummaries()) {
 			s3.deleteObject(bucketName, summary.getKey());
