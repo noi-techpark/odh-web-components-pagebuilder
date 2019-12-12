@@ -14,11 +14,15 @@ pipeline {
         POSTGRES_USERNAME = credentials('pagebuilder-test-postgres-username')
         POSTGRES_PASSWORD = credentials('pagebuilder-test-postgres-password')
 
-        AWS_REGION = 'eu-west-1'
+        AWS_REGION = "eu-west-1"
         AWS_ACCESS_KEY = credentials('pagebuilder-test-s3-access-key')
         AWS_SECRET_KEY = credentials('pagebuilder-test-s3-secret-key')
 
         USERS_FILE = '/var/data/pagebuilder/application.users-file'
+
+        BASE_URL = "https://pagebuilder.opendatahub.testingmachine.eu"
+        PAGES_DOMAIN_NAME = "pagebuildersites.opendatahub.testingmachine.eu"
+        PAGES_ALLOW_SUBDOMAINS = "true"
     }
 
     stages {
@@ -41,6 +45,10 @@ pipeline {
                 sh 'sed -i -e "s%\\(application.aws.access-secret\\s*=\\).*\\$%\\1${AWS_SECRET_KEY}%" src/main/resources/application.properties'
                 
                 sh 'sed -i -e "s%\\(application.users-file\\s*=\\).*\\$%\\1${USERS_FILE}%" src/main/resources/application.properties'
+                
+                sh 'sed -i -e "s%\\(application.base-url\\s*=\\).*\\$%\\1${BASE_URL}%" src/main/resources/application.properties'
+                sh 'sed -i -e "s%\\(application.pages.domain-name\\s*=\\).*\\$%\\1${PAGES_DOMAIN_NAME}%" src/main/resources/application.properties'
+                sh 'sed -i -e "s%\\(application.pages.allow-subdomains\\s*=\\).*\\$%\\1${PAGES_ALLOW_SUBDOMAINS}%" src/main/resources/application.properties'
             }
         }
         stage('Test') {

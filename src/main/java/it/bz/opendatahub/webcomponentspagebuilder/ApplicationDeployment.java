@@ -10,7 +10,7 @@ public class ApplicationDeployment {
 	private String baseUrl;
 
 	public ApplicationDeployment(String baseUrl) {
-		this.baseUrl = baseUrl;
+		this.baseUrl = baseUrl.replaceAll("/$", "");
 	}
 
 	public String getBaseUrl() {
