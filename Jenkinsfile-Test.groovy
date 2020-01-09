@@ -65,7 +65,7 @@ pipeline {
         }
         stage('Deploy') {
             steps{
-                sh 'mvn -B -U -Dmaven.test.skip=true tomcat:redeploy -Dmaven.tomcat.url=${TESTSERVER_TOMCAT_ENDPOINT} -Dmaven.tomcat.server=testServer -Dmaven.tomcat.path=/'
+                sh 'mvn -B -U -Pproduction-war -Dmaven.test.skip=true tomcat:redeploy -Dmaven.tomcat.url=${TESTSERVER_TOMCAT_ENDPOINT} -Dmaven.tomcat.server=testServer -Dmaven.tomcat.path=/'
             }
         }
     }
