@@ -23,6 +23,8 @@ pipeline {
         BASE_URL = "https://pagebuilder.opendatahub.testingmachine.eu"
         PAGES_DOMAIN_NAME = "pagebuildersites.opendatahub.testingmachine.eu"
         PAGES_ALLOW_SUBDOMAINS = "true"
+
+        APPLICATION_NAME = "pagebuilder-test"
     }
 
     stages {
@@ -50,6 +52,9 @@ pipeline {
                     sed -i -e "s%\\(application.base-url\\s*=\\).*\\$%\\1${BASE_URL}%" src/main/resources/application.properties
                     sed -i -e "s%\\(application.pages.domain-name\\s*=\\).*\\$%\\1${PAGES_DOMAIN_NAME}%" src/main/resources/application.properties
                     sed -i -e "s%\\(application.pages.allow-subdomains\\s*=\\).*\\$%\\1${PAGES_ALLOW_SUBDOMAINS}%" src/main/resources/application.properties
+
+                    sed -i -e "s%\\(spring.application.name\\s*=\\).*\\$%\\1${APPLICATION_NAME}%" src/main/resources/application.properties
+                    sed -i -e "s%\\(spring.jmx.default-domain\\s*=\\).*\\$%\\1${APPLICATION_NAME}%" src/main/resources/application.properties
                 '''
             }
         }
