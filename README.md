@@ -50,6 +50,9 @@ If you have installed the executables in different locations or you want to use 
 The application will use the resources provided by AWS to deploy the composed pages. It is highly advisable to create a separate user (instead of the primary credentials of your AWS account) with at least the following policies:
 
 * AmazonS3FullAccess
+* AWSCertificateManagerFullAccess
+* CloudFrontFullAccess
+* AmazonRoute53FullAccess
 
 See the [Configuration](#configuration) section on how to specify the user's access key and secret.
 
