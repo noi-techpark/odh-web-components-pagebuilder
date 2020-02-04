@@ -170,7 +170,7 @@ public class ApplicationConfiguration {
 	@Bean
 	@Lazy
 	public ScreenshotRenderer screenshotRenderer() {
-		return new ChromeWebDriverScreenshotRenderer();
+		return new ChromeWebDriverScreenshotRenderer("/usr/bin/chromedriver", "/usr/bin/chromium");
 	}
 
 	@Bean

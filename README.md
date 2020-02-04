@@ -47,12 +47,117 @@ If you have installed the executables in different locations or you want to use 
 
 ### Setup AWS
 
-The application will use the resources provided by AWS to deploy the composed pages. It is highly advisable to create a separate user (instead of the primary credentials of your AWS account) with at least the following policies:
+The application will use the resources provided by AWS to deploy the composed pages. It is highly advisable to create a separate user (instead of the primary credentials of your AWS account) with appropriate permissions and policies.
+
+#### Configure minimal access
+
+The following policy definition will only configure access to the required services and subset of resources
+
+    {
+        "Version": "2012-10-17",
+        "Statement": [
+            {
+                "Effect": "Allow",
+                "Action": [
+                    "s3:CreateBucket"
+                ],
+                "Resource": "*"
+            },
+            {
+                "Effect": "Allow",
+                "Action": [
+                    "s3:PutBucketTagging",
+                    "s3:PutBucketWebsite",
+                    "s3:PutBucketAcl",
+                    "s3:DeleteBucket",
+                    "s3:PutObject",
+                    "s3:PutObjectAcl",
+                    "s3:GetObject",
+                    "s3:GetObjectAcl",
+                    "s3:DeleteObject"
+                ],
+                "Resource": "arn:aws:s3:::odh-pagebuilder-*"
+            },
+            {
+                "Effect": "Allow",
+                "Action": [
+                    "route53:ListHostedZones",
+                    "route53:CreateHostedZone",
+                    "route53:ChangeResourceRecordSets",
+                    "route53:GetChange"
+                ],
+                "Resource": "*"
+            },
+            {
+                "Effect": "Allow",
+                "Action": [
+                    "acm:RequestCertificate",
+                    "acm:RenewCertificate",
+                    "acm:ListCertificates",
+                    "acm:DescribeCertificate",
+                    "acm:ListTagsForCertificate",
+                    "acm:AddTagsToCertificate",
+                    "acm:GetChange"
+                ],
+                "Resource": "*"
+            },
+            {
+                "Effect": "Allow",
+                "Action": [
+                    "cloudfront:ListDistributions",
+                    "cloudfront:GetDistribution",
+                    "cloudfront:CreateDistribution",
+                    "cloudfront:UpdateDistribution"
+                ],
+                "Resource": "*"
+            }
+        ]
+    }
+
+#### Configure full access
+
+If you don't mind using a user with full access to some services, then you can configure the user with the following policies:
 
 * AmazonS3FullAccess
 * AWSCertificateManagerFullAccess
 * CloudFrontFullAccess
 * AmazonRoute53FullAccess
+
+You can also the policy definition
+
+    {
+        "Version": "2012-10-17",
+        "Statement": [
+            {
+                "Effect": "Allow",
+                "Action": [
+                    "acm:*",
+                    "route53:*",
+                    "cloudfront:*",
+                    "cloudwatch:DescribeAlarms",
+                    "cloudwatch:GetMetricStatistics",
+                    "ec2:DescribeVpcs",
+                    "ec2:DescribeVpcEndpoints",
+                    "ec2:DescribeRegions",
+                    "elasticloadbalancing:DescribeLoadBalancers",
+                    "elasticbeanstalk:DescribeEnvironments",
+                    "iam:ListServerCertificates",
+                    "route53domains:*",
+                    "s3:*",
+                    "sns:ListTopics",
+                    "sns:ListSubscriptionsByTopic",
+                    "waf:ListWebACLs",
+                    "waf:GetWebACL"
+                ],
+                "Resource": "*"
+            },
+            {
+                "Effect": "Allow",
+                "Action": "apigateway:GET",
+                "Resource": "arn:aws:apigateway:*::/domainnames"
+            }
+        ]
+    }
 
 See the [Configuration](#configuration) section on how to specify the user's access key and secret.
 
