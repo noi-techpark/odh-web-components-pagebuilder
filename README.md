@@ -59,6 +59,7 @@ The following policy definition will only configure access to the required servi
             {
                 "Effect": "Allow",
                 "Action": [
+                    "s3:ListAllMyBuckets",
                     "s3:CreateBucket"
                 ],
                 "Resource": "*"
