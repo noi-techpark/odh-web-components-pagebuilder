@@ -295,11 +295,26 @@ public class CustomConfiguration {
 
 ### Running
 
+#### Natively
+
 Build and run the project [locally](http://0.0.0.0:8080) (http://0.0.0.0:8080):
 
 ```bash
 mvn spring-boot:run
 ```
+
+#### With Docker
+
+Copy `.env.example` to `.env` and set values. 
+
+Copy `src/main/resources/application.users-file.example` to `src/main/resources/application.users-file`,
+and set users and passwords as you like. The default login is `admin` with password `admin`.
+
+Run `docker-compose up --detach` and optionally watch logs with `docker-compose logs --follow`.
+
+This command will start a Postgres (see `.env` to know the port and
+credentials), and a Java instance, the latter is accessible at
+[locally](http://0.0.0.0:8089) (http://0.0.0.0:8089).
 
 ### Packaging
 

@@ -1,11 +1,35 @@
 version: "3"
 services:
-  java:
+  app:
     build:
       context: .
       dockerfile: docker/dockerfile-java
+    depends_on:
+      - postgres
     volumes:
        - ./:/code
     working_dir: /code
-    command: tail -f /dev/null
+    command: ["mvn spring-boot:run"]
+    ports:
+      - "8089:8080"
+    environment:
+      POSTGRES_URL: ${POSTGRES_URL}
+      POSTGRES_USERNAME: ${POSTGRES_USERNAME}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      AWS_REGION: ${AWS_REGION}
+      AWS_ACCESS_KEY: ${AWS_ACCESS_KEY}
+      AWS_SECRET_KEY: ${AWS_SECRET_KEY}
+      PAGES_ALLOW_SUBDOMAINS: ${PAGES_ALLOW_SUBDOMAINS}
+      USERS_FILE: ${USERS_FILE}
+      BASE_URL: ${BASE_URL}
+      PAGES_DOMAIN_NAME: ${PAGES_DOMAIN_NAME}
+    tty: true
+  postgres:
+    image: "postgres:11-alpine"
+    ports:
+      - "${POSTGRES_PORT}:5432"
+    environment:
+      POSTGRES_DB: pagebuilder
+      POSTGRES_USER: pagebuilder
+      POSTGRES_PASSWORD: password
     tty: true
