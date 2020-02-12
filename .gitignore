@@ -22,5 +22,7 @@ error-screenshots/
 /docker-compose.dev.yml
 LocalConfiguration.java
 /src/main/resources/application.properties
-
 /tmp
+.env
+application.users-file
+
