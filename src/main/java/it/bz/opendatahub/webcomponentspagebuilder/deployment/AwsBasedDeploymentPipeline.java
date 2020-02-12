@@ -128,9 +128,7 @@ public class AwsBasedDeploymentPipeline implements DeploymentPipeline {
 	private String deployBucket(DeploymentManifest manifest, DeploymentPayload payload) {
 		String bucketName = generateBucketName(manifest);
 
-		if (s3.listBuckets().stream().filter(bucket -> bucket.getName().equals(bucketName)).count() == 0) {
-			s3.createBucket(bucketName);
-		}
+		s3.createBucket(bucketName);
 
 		HashMap<String, String> tags = new HashMap<>();
 		tags.put("domain", manifest.getDomainName());
