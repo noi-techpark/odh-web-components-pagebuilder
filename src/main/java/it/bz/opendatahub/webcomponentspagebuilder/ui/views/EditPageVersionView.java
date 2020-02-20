@@ -177,6 +177,7 @@ public class EditPageVersionView extends VerticalLayout
 				});
 
 		HorizontalLayout contentLayout = new HorizontalLayout();
+		contentLayout.addClassName("contains-contents");
 		contentLayout.setPadding(false);
 		contentLayout.setSpacing(true);
 		contentLayout.setSizeFull();

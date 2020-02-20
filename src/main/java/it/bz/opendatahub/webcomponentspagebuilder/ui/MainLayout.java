@@ -9,6 +9,7 @@ import com.vaadin.flow.component.applayout.AppLayoutMenuItem;
 import com.vaadin.flow.component.dependency.HtmlImport;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.component.page.Push;
 import com.vaadin.flow.component.page.Viewport;
 import com.vaadin.flow.server.PWA;
 
@@ -22,7 +23,8 @@ import it.bz.opendatahub.webcomponentspagebuilder.ui.views.PagesView;
  * 
  * @author danielrampanelli
  */
-@PWA(name = "OpenDataHub Web Components Page Builder", shortName = "Page Builder", startPath = "login")
+@PWA(name = "OpenDataHub Web Components Page Builder", shortName = "Page Builder", startPath = "login", enableInstallPrompt = false)
+@Push
 @HtmlImport("frontend://styles/shared-styles.html")
 @Viewport("width=device-width, minimum-scale=1, initial-scale=1, user-scalable=yes")
 public class MainLayout extends AbstractAppRouterLayout {

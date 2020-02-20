@@ -109,7 +109,7 @@ public class AwsBasedDeploymentPipeline implements DeploymentPipeline {
 	}
 
 	private String generateBucketName(DeploymentManifest manifest) {
-		return String.format("odh-pagebuilder-%s", DigestUtils.md5Hex(manifest.getDomainName()));
+		return String.format("odh-pagebuilder-%s", DigestUtils.md5Hex(manifest.getUri()));
 	}
 
 	@Override
@@ -128,10 +128,12 @@ public class AwsBasedDeploymentPipeline implements DeploymentPipeline {
 	private String deployBucket(DeploymentManifest manifest, DeploymentPayload payload) {
 		String bucketName = generateBucketName(manifest);
 
-		s3.createBucket(bucketName);
+		if (s3.listBuckets().stream().filter(bucket -> bucket.getName().equals(bucketName)).count() == 0) {
+			s3.createBucket(bucketName);
+		}
 
 		HashMap<String, String> tags = new HashMap<>();
-		tags.put("domain", manifest.getDomainName());
+		tags.put("URI", manifest.getUri());
 
 		BucketTaggingConfiguration tagsConfiguration = new BucketTaggingConfiguration();
 		tagsConfiguration.withTagSets(new TagSet(tags));

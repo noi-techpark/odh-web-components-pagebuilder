@@ -19,6 +19,7 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
 import com.google.common.base.Splitter;
+import com.google.common.eventbus.EventBus;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 
@@ -177,6 +178,11 @@ public class ApplicationConfiguration {
 	@Lazy
 	public ApplicationDeployment deployment() {
 		return new ApplicationDeployment(baseUrl);
+	}
+
+	@Bean
+	public EventBus eventBus() {
+		return new EventBus();
 	}
 
 }

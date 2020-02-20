@@ -100,13 +100,17 @@ public class ScreenshotsController {
 			throw new ScreenshotRenderingInProgressException();
 		}
 
-		if (!cache.containsKey(key)) {
-			generateScreenshot(pageVersion.getIdAsString());
+		try {
+			if (!cache.containsKey(key)) {
+				generateScreenshot(pageVersion.getIdAsString());
+			}
+
+			cache.get(key).setAccessDatetime(LocalDateTime.now());
+
+			return cache.get(key).getImage();
+		} catch (IllegalStateException e) {
+			return null;
 		}
-
-		cache.get(key).setAccessDatetime(LocalDateTime.now());
-
-		return cache.get(key).getImage();
 	}
 
 	@EventListener

@@ -7,7 +7,6 @@ import org.springframework.context.ApplicationContext;
 
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
-import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.dependency.HtmlImport;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.notification.Notification;
@@ -20,6 +19,7 @@ import it.bz.opendatahub.webcomponentspagebuilder.data.entities.Page;
 import it.bz.opendatahub.webcomponentspagebuilder.data.repositories.PageRepository;
 import it.bz.opendatahub.webcomponentspagebuilder.ui.MainLayout;
 import it.bz.opendatahub.webcomponentspagebuilder.ui.dialogs.CreatePageDialog;
+import it.bz.opendatahub.webcomponentspagebuilder.ui.dialogs.DangerAwareConfirmDialog;
 
 /**
  * View for listing all currently active (non-archived) pages.
@@ -59,8 +59,9 @@ public class PagesView extends VerticalLayout {
 			Button archiveButton = new Button("ARCHIVE");
 			archiveButton.addThemeVariants(ButtonVariant.LUMO_ERROR);
 			archiveButton.addClickListener(e -> {
-				ConfirmDialog dialog = new ConfirmDialog("ARCHIVE", "Are you sure you want to archive this page?",
-						"ARCHIVE", (dialogEvent) -> {
+				DangerAwareConfirmDialog.create().withTitle("ARCHIVE")
+						.withMessage("Are you sure you want to archive this page?").withAction("ARCHIVE")
+						.withHandler(() -> {
 							page.setArchived(true);
 							page.setPublication(null);
 
@@ -69,13 +70,7 @@ public class PagesView extends VerticalLayout {
 							refresh();
 
 							Notification.show("Page archived!");
-						}, "CANCEL", (dialogEvent) -> {
-							// noop
-						});
-
-				dialog.setConfirmButtonTheme("error primary");
-
-				dialog.open();
+						}).open();
 			});
 
 			return new HorizontalLayout(manageButton, archiveButton);
