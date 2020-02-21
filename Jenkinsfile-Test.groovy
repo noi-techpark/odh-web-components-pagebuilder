@@ -82,10 +82,14 @@ pipeline {
 
 						ssh -o StrictHostKeyChecking=no ${DOCKER_SERVER_IP} bash -euc "'
 							AWS_ACCESS_KEY_ID="${AWS_ACCESS_KEY_ID}" AWS_SECRET_ACCESS_KEY="${AWS_SECRET_ACCESS_KEY}" aws ecr get-login --region eu-west-1 --no-include-email | bash
-							cd ${DOCKER_SERVER_DIRECTORY}/releases/${BUILD_NUMBER} && DOCKER_IMAGE="${DOCKER_IMAGE}" DOCKER_TAG="${DOCKER_TAG}" docker-compose --no-ansi pull
+							export DOCKER_IMAGE="${DOCKER_IMAGE}"
+							export DOCKER_TAG="test-12"
+							cd ${DOCKER_SERVER_DIRECTORY}/releases/${BUILD_NUMBER}
+                            docker-compose --no-ansi pull
 							[ -d \"${DOCKER_SERVER_DIRECTORY}/current\" ] && (cd ${DOCKER_SERVER_DIRECTORY}/current && docker-compose --no-ansi down) || true
 							ln -sfn ${DOCKER_SERVER_DIRECTORY}/releases/${BUILD_NUMBER} ${DOCKER_SERVER_DIRECTORY}/current
-							cd ${DOCKER_SERVER_DIRECTORY}/current && docker-compose --no-ansi up --detach
+							cd ${DOCKER_SERVER_DIRECTORY}/current
+                            docker-compose --no-ansi up --detach
 						'"
 					'''
                 }
