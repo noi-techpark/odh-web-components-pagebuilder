@@ -15,4 +15,4 @@ services:
       BASE_URL: ${BASE_URL}
       PAGES_DOMAIN_NAME: ${PAGES_DOMAIN_NAME}
     ports:
-      - "1010:8080"
+      - "1020:8080"
