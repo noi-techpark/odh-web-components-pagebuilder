@@ -6,7 +6,7 @@ DECLARE
     rcd RECORD;
 BEGIN
     FOR rcd IN SELECT pp.id AS "page_id", ppp.id AS "publication_id" FROM pagebuilder_page_publication ppp JOIN pagebuilder_page pp ON ppp.id = pp.publication_id LOOP
-        UPDATE pagebuilder_page_publication ppp SET ppp.page_id = rcd.page_id WHERE ppp.id = rcd.publication_id;
+        UPDATE pagebuilder_page_publication SET page_id = rcd.page_id WHERE id = rcd.publication_id;
     END LOOP;
 END $$;
 
