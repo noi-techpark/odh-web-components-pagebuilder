@@ -70,7 +70,7 @@ pipeline {
         stage('Deploy') {
             steps {
                 sshagent(['jenkins-ssh-key']) {
-                    sh """
+                    sh '''
 					    ssh -o StrictHostKeyChecking=no ${DOCKER_SERVER_IP} bash -euc "'
 							mkdir -p ${DOCKER_SERVER_DIRECTORY}
 							ls -1t ${DOCKER_SERVER_DIRECTORY}/releases/ | tail -n +10 | grep -v \$(readlink -f ${DOCKER_SERVER_DIRECTORY}/current | xargs basename --) -- | xargs -r printf \"${DOCKER_SERVER_DIRECTORY}/releases/%s\\n\" | xargs -r rm -rf --
@@ -82,12 +82,12 @@ pipeline {
 
 						ssh -o StrictHostKeyChecking=no ${DOCKER_SERVER_IP} bash -euc "'
 							AWS_ACCESS_KEY_ID="${AWS_ACCESS_KEY_ID}" AWS_SECRET_ACCESS_KEY="${AWS_SECRET_ACCESS_KEY}" aws ecr get-login --region eu-west-1 --no-include-email | bash
-							cd ${DOCKER_SERVER_DIRECTORY}/releases/${BUILD_NUMBER} && docker-compose --no-ansi pull
+							cd ${DOCKER_SERVER_DIRECTORY}/releases/${BUILD_NUMBER} && DOCKER_IMAGE="${DOCKER_IMAGE}" DOCKER_TAG="${DOCKER_TAG}" docker-compose --no-ansi pull
 							[ -d \"${DOCKER_SERVER_DIRECTORY}/current\" ] && (cd ${DOCKER_SERVER_DIRECTORY}/current && docker-compose --no-ansi down) || true
 							ln -sfn ${DOCKER_SERVER_DIRECTORY}/releases/${BUILD_NUMBER} ${DOCKER_SERVER_DIRECTORY}/current
 							cd ${DOCKER_SERVER_DIRECTORY}/current && docker-compose --no-ansi up --detach
 						'"
-					"""
+					'''
                 }
             }
         }
