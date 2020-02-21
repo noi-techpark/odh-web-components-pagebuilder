@@ -4,6 +4,11 @@
             height: 76px;
         }
         
+        .edit-page-version-view {
+            overflow: hidden;
+            padding: 0 0 1em 0;
+        }
+        
         .manage-page-view .page-header .contains-page-title,
         .edit-page-version-view .page-header .contains-page-title {
             font-size: 1.8em;
@@ -35,6 +40,26 @@
             transform: translateY(-50%);
         }
         
+        .manage-page-view .task .task-status {
+            border-radius: 4px;
+            color: #ffffff;
+            display: inline-block;
+            font-size: 0.85em;
+            padding: 2px 16px;
+        }
+        
+        .manage-page-view .task.is-pending .task-status {
+            background-color: #333333;
+        }
+        
+        .manage-page-view .task.is-progressing .task-status {
+            background-color: #4682B4;
+        }
+        
+        .manage-page-view .task.is-completed .task-status {
+            background-color: #3CB371;
+        }
+        
         .edit-page-version-view .page-editor-wrapper {
             background-color: #333333;
             overflow: auto;
@@ -62,7 +87,8 @@
             margin-left: -8px;
             margin-right: -8px;
             margin-top: 9px;
-            overflow: hidden;
+            overflow-x: hidden;
+            overflow-y: scroll;
         }
         
         .edit-page-version-view .contains-library .components .page-component-card {
@@ -70,6 +96,11 @@
             cursor: move;
             display: inline-block;
             margin: 8px;
+        }
+        
+        .edit-page-version-view .contains-contents {
+            box-sizing: border-box;
+            padding: 0 0 96px 0;
         }
     </style>
 </custom-style>

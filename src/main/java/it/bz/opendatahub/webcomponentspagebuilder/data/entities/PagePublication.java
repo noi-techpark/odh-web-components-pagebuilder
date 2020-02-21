@@ -10,6 +10,7 @@ import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
 import javax.persistence.FetchType;
 import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 import javax.validation.constraints.NotNull;
@@ -26,7 +27,8 @@ import org.springframework.data.jpa.convert.threeten.Jsr310JpaConverters;
 @Table(name = "pagebuilder_page_publication")
 public class PagePublication extends BaseEntity {
 
-	@OneToOne(fetch = FetchType.EAGER, mappedBy = "publication", cascade = { CascadeType.REFRESH })
+	@ManyToOne(fetch = FetchType.EAGER)
+	@JoinColumn(name = "page_id")
 	private Page page;
 
 	@Column(name = "domain_name")
@@ -38,6 +40,11 @@ public class PagePublication extends BaseEntity {
 
 	@Column(name = "path_name")
 	private String pathName;
+
+	@Column(name = "action")
+	@Enumerated(EnumType.STRING)
+	@NotNull
+	private PagePublicationAction action;
 
 	@Column(name = "status")
 	@Enumerated(EnumType.STRING)
@@ -98,6 +105,14 @@ public class PagePublication extends BaseEntity {
 		this.version = version;
 	}
 
+	public PagePublicationAction getAction() {
+		return action;
+	}
+
+	public void setAction(PagePublicationAction action) {
+		this.action = action;
+	}
+
 	public PagePublicationStatus getStatus() {
 		return status;
 	}
@@ -126,6 +141,20 @@ public class PagePublication extends BaseEntity {
 		}
 
 		return hostName;
+	}
+
+	public PagePublication copy() {
+		PagePublication copy = new PagePublication();
+		copy.setPage(getPage());
+		copy.setVersion(getVersion());
+		copy.setDomainName(getDomainName());
+		copy.setSubdomainName(getSubdomainName());
+		copy.setPathName(getPathName());
+		copy.setAction(getAction());
+		copy.setStatus(getStatus());
+		copy.setDeployedAt(getDeployedAt());
+
+		return copy;
 	}
 
 }
