@@ -1,14 +1,14 @@
 pipeline {
-    agent {
-        dockerfile {
-            filename 'docker/dockerfile-java'
-            additionalBuildArgs '--build-arg JENKINS_USER_ID=`id -u jenkins` --build-arg JENKINS_GROUP_ID=`id -g jenkins`'
-        }
-    }
+    agent any
 
     environment {
-        TESTSERVER_TOMCAT_ENDPOINT = "http://pagebuilder.tomcat02.testingmachine.eu:8080/manager/text"
-        TESTSERVER_TOMCAT_CREDENTIALS = credentials('testserver-tomcat8-credentials')
+        AWS_ACCESS_KEY_ID = credentials('AWS_ACCESS_KEY_ID')
+        AWS_SECRET_ACCESS_KEY = credentials('AWS_SECRET_ACCESS_KEY')
+		DOCKER_PROJECT_NAME = "pagebuilder"
+		DOCKER_SERVER_IP = "63.33.73.203" // EC2 name = test-docker-01
+        DOCKER_SERVER_DIRECTORY = "/var/docker/pagebuilder"
+		DOCKER_IMAGE = '755952719952.dkr.ecr.eu-west-1.amazonaws.com/pagebuilder'
+		DOCKER_TAG = "test-$BUILD_NUMBER"
 
         POSTGRES_URL = "jdbc:postgresql://test-pg-bdp.co90ybcr8iim.eu-west-1.rds.amazonaws.com:5432/webcompbuilder"
         POSTGRES_USERNAME = credentials('pagebuilder-test-postgres-username')
@@ -30,47 +30,65 @@ pipeline {
     stages {
         stage('Configure') {
             steps {
-                sh '''
-                    sed -i -e "s/<\\/settings>$//g\" ~/.m2/settings.xml
-                    echo "    <servers>" >> ~/.m2/settings.xml
-                    echo "        ${TESTSERVER_TOMCAT_CREDENTIALS}" >> ~/.m2/settings.xml
-                    echo "    </servers>" >> ~/.m2/settings.xml
-                    echo "</settings>" >> ~/.m2/settings.xml
-
+                sh """
                     cp src/main/resources/application.properties.example src/main/resources/application.properties
-                
-                    sed -i -e "s%\\(application.database.url\\s*=\\).*\\$%\\1${POSTGRES_URL}%" src/main/resources/application.properties
-                    sed -i -e "s%\\(application.database.username\\s*=\\).*\\$%\\1${POSTGRES_USERNAME}%" src/main/resources/application.properties
-                    sed -i -e "s%\\(application.database.password\\s*=\\).*\\$%\\1${POSTGRES_PASSWORD}%" src/main/resources/application.properties
-                
-                    sed -i -e "s%\\(application.aws.region\\s*=\\).*\\$%\\1${AWS_REGION}%" src/main/resources/application.properties
-                    sed -i -e "s%\\(application.aws.access-key\\s*=\\).*\\$%\\1${AWS_ACCESS_KEY}%" src/main/resources/application.properties
-                    sed -i -e "s%\\(application.aws.access-secret\\s*=\\).*\\$%\\1${AWS_SECRET_KEY}%" src/main/resources/application.properties
-                
-                    sed -i -e "s%\\(application.users-file\\s*=\\).*\\$%\\1${USERS_FILE}%" src/main/resources/application.properties
-                
-                    sed -i -e "s%\\(application.base-url\\s*=\\).*\\$%\\1${BASE_URL}%" src/main/resources/application.properties
-                    sed -i -e "s%\\(application.pages.domain-name\\s*=\\).*\\$%\\1${PAGES_DOMAIN_NAME}%" src/main/resources/application.properties
-                    sed -i -e "s%\\(application.pages.allow-subdomains\\s*=\\).*\\$%\\1${PAGES_ALLOW_SUBDOMAINS}%" src/main/resources/application.properties
 
-                    sed -i -e "s%\\(spring.application.name\\s*=\\).*\\$%\\1${APPLICATION_NAME}%" src/main/resources/application.properties
-                    sed -i -e "s%\\(spring.jmx.default-domain\\s*=\\).*\\$%\\1${APPLICATION_NAME}%" src/main/resources/application.properties
-                '''
+                    rm -f .env
+					cp .env.example .env
+
+                    echo 'POSTGRES_URL=${POSTGRES_URL}' >> .env
+                    echo 'POSTGRES_USERNAME=${POSTGRES_USERNAME}' >> .env
+                    echo 'POSTGRES_PASSWORD=${POSTGRES_PASSWORD}' >> .env
+                    echo 'AWS_REGION=${AWS_REGION}' >> .env
+                    echo 'AWS_ACCESS_KEY=${AWS_ACCESS_KEY}' >> .env
+                    echo 'AWS_SECRET_KEY=${AWS_SECRET_KEY}' >> .env
+                    echo 'USERS_FILE=${USERS_FILE}' >> .env
+                    echo 'BASE_URL=${BASE_URL}' >> .env
+                    echo 'PAGES_DOMAIN_NAME=${PAGES_DOMAIN_NAME}' >> .env
+                    echo 'PAGES_ALLOW_SUBDOMAINS=${PAGES_ALLOW_SUBDOMAINS}' >> .env
+                    echo 'APPLICATION_NAME=${APPLICATION_NAME}' >> .env
+                """
             }
         }
         stage('Test') {
             steps {
-                sh 'mvn -B -U clean test verify'
+                sh '''
+					docker-compose --no-ansi build --pull --build-arg JENKINS_USER_ID=$(id -u jenkins) --build-arg JENKINS_GROUP_ID=$(id -g jenkins)
+					docker-compose --no-ansi run --rm --no-deps -u $(id -u jenkins):$(id -g jenkins) app "mvn -B -U clean test"
+				'''
             }
         }
         stage('Build') {
             steps {
-                sh 'mvn -B -U -Pproduction-war -Dmaven.test.skip=true clean package'
+                sh '''
+					aws ecr get-login --region eu-west-1 --no-include-email | bash
+					docker-compose --no-ansi -f docker-compose.build.yml build --pull
+					docker-compose --no-ansi -f docker-compose.build.yml push
+				'''
             }
         }
         stage('Deploy') {
-            steps{
-                sh 'mvn -B -U -Pproduction-war -Dmaven.test.skip=true tomcat:redeploy -Dmaven.tomcat.url=${TESTSERVER_TOMCAT_ENDPOINT} -Dmaven.tomcat.server=testServer -Dmaven.tomcat.path=/'
+            steps {
+                sshagent(['jenkins-ssh-key']) {
+                    sh """
+					    ssh -o StrictHostKeyChecking=no ${DOCKER_SERVER_IP} bash -euc "'
+							mkdir -p ${DOCKER_SERVER_DIRECTORY}
+							ls -1t ${DOCKER_SERVER_DIRECTORY}/releases/ | tail -n +10 | grep -v `readlink -f ${DOCKER_SERVER_DIRECTORY}/current | xargs basename --` -- | xargs -r printf \"${DOCKER_SERVER_DIRECTORY}/releases/%s\\n\" | xargs -r rm -rf --
+							mkdir -p ${DOCKER_SERVER_DIRECTORY}/releases/${BUILD_NUMBER}
+						'"
+
+						scp -o StrictHostKeyChecking=no docker-compose.run.yml ${DOCKER_SERVER_IP}:${DOCKER_SERVER_DIRECTORY}/releases/${BUILD_NUMBER}/docker-compose.yml
+						scp -o StrictHostKeyChecking=no .env ${DOCKER_SERVER_IP}:${DOCKER_SERVER_DIRECTORY}/releases/${BUILD_NUMBER}/.env
+
+						ssh -o StrictHostKeyChecking=no ${DOCKER_SERVER_IP} bash -euc "'
+							AWS_ACCESS_KEY_ID="${AWS_ACCESS_KEY_ID}" AWS_SECRET_ACCESS_KEY="${AWS_SECRET_ACCESS_KEY}" aws ecr get-login --region eu-west-1 --no-include-email | bash
+							cd ${DOCKER_SERVER_DIRECTORY}/releases/${BUILD_NUMBER} && docker-compose --no-ansi pull
+							[ -d \"${DOCKER_SERVER_DIRECTORY}/current\" ] && (cd ${DOCKER_SERVER_DIRECTORY}/current && docker-compose --no-ansi down) || true
+							ln -sfn ${DOCKER_SERVER_DIRECTORY}/releases/${BUILD_NUMBER} ${DOCKER_SERVER_DIRECTORY}/current
+							cd ${DOCKER_SERVER_DIRECTORY}/current && docker-compose --no-ansi up --detach
+						'"
+					"""
+                }
             }
         }
     }

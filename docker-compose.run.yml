@@ -1,0 +1,18 @@
+version: "3.4"
+services:
+  app:
+    image: ${DOCKER_IMAGE}:${DOCKER_TAG}
+    command: "mvn spring-boot:run"
+    environment:
+      POSTGRES_URL: ${POSTGRES_URL}
+      POSTGRES_USERNAME: ${POSTGRES_USERNAME}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      AWS_REGION: ${AWS_REGION}
+      AWS_ACCESS_KEY: ${AWS_ACCESS_KEY}
+      AWS_SECRET_KEY: ${AWS_SECRET_KEY}
+      PAGES_ALLOW_SUBDOMAINS: ${PAGES_ALLOW_SUBDOMAINS}
+      USERS_FILE: ${USERS_FILE}
+      BASE_URL: ${BASE_URL}
+      PAGES_DOMAIN_NAME: ${PAGES_DOMAIN_NAME}
+    ports:
+      - "1020:8080"

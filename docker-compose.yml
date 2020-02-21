@@ -1,17 +1,16 @@
-version: "3"
+version: "3.4"
 services:
   app:
     build:
       context: .
-      dockerfile: docker/dockerfile-java
-    depends_on:
-      - postgres
+      dockerfile: docker/java.dockerfile
+      target: dev
     volumes:
-       - ./:/code
+      - ./:/code
     working_dir: /code
     command: ["mvn spring-boot:run"]
-    ports:
-      - "8089:8080"
+    depends_on:
+      - postgres
     environment:
       POSTGRES_URL: ${POSTGRES_URL}
       POSTGRES_USERNAME: ${POSTGRES_USERNAME}
@@ -24,12 +23,14 @@ services:
       BASE_URL: ${BASE_URL}
       PAGES_DOMAIN_NAME: ${PAGES_DOMAIN_NAME}
     tty: true
+    ports:
+      - "${APP_PORT}:8080"
   postgres:
     image: "postgres:11-alpine"
-    ports:
-      - "${POSTGRES_PORT}:5432"
     environment:
       POSTGRES_DB: pagebuilder
       POSTGRES_USER: pagebuilder
       POSTGRES_PASSWORD: password
     tty: true
+    ports:
+      - "${POSTGRES_PORT}:5432"
