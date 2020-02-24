@@ -16,7 +16,7 @@ public class ChromeWebDriverScreenshotRenderer extends WebDriverScreenshotRender
 
 	public ChromeWebDriverScreenshotRenderer() {
 		System.setProperty("webdriver.chrome.args", "--disable-logging");
-		System.setProperty("webdriver.chrome.silentOutput", "true");
+		System.setProperty("webdriver.chrome.silentOutput", "false");
 
 		ChromeDriverManager.getInstance(ChromeOptions.class).setup();
 	}
@@ -41,10 +41,15 @@ public class ChromeWebDriverScreenshotRenderer extends WebDriverScreenshotRender
 		options.addArguments("--window-size=1280,960");
 		options.addArguments("--hide-scrollbars");
 		options.addArguments("--ignore-certificate-errors");
+		options.addArguments("--whitelisted-ips");
 		options.addArguments("--disable-gpu");
 		options.addArguments("--disable-extensions");
 		options.addArguments("--disable-dev-shm-usage");
 		options.addArguments("--no-sandbox");
+		options.addArguments("--port=4444");
+
+		System.out.println("---- OPTIONS ----");
+		System.out.println(options);
 
 		if (getBinaryPath() != null) {
 			options.setBinary(getBinaryPath());

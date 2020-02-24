@@ -281,7 +281,7 @@ public class CustomConfiguration {
     @Bean
     @Primary
     public ScreenshotRenderer customScreenshotRenderer() {
-        return new ChromeWebDriverScreenshotRenderer("/opt/bin/chromedriver", "/opt/bin/chrome");
+        return new ChromeWebDriverScreenshotRenderer("/usr/bin/chromedriver", "/usr/bin/chromium");
     }
     
     @Bean

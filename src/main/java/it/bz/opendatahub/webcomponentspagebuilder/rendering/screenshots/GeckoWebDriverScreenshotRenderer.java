@@ -33,9 +33,10 @@ public class GeckoWebDriverScreenshotRenderer extends WebDriverScreenshotRendere
 		FirefoxOptions options = new FirefoxOptions();
 		options.setAcceptInsecureCerts(true);
 		options.setHeadless(true);
-		options.setLogLevel(FirefoxDriverLogLevel.FATAL);
+		options.setLogLevel(FirefoxDriverLogLevel.DEBUG);
 		options.addArguments("--width=1280");
 		options.addArguments("--height=960");
+		options.addArguments("--safe-mode");
 
 		if (getBinaryPath() != null) {
 			options.setBinary(getBinaryPath());
