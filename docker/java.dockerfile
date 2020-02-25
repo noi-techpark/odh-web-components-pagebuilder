@@ -31,5 +31,5 @@ COPY src /code/src
 COPY pom.xml /code/pom.xml
 COPY src/main/resources/application.users-file.example /var/data/pagebuilder/application.users-file
 
-CMD mkdir /root/.m2 && \
+RUN mkdir /root/.m2 && \
 	mvn dependency:copy-dependencies -DoutputDirectory=/root/.m2
