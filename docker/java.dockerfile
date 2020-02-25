@@ -3,9 +3,10 @@ FROM maven:3-jdk-8 as base
 RUN mkdir -p /code
 WORKDIR /code
 
+# Use chromium to create screenshots
 # RUN apt-get update && apt-get install --yes chromium chromium-driver
 
-# Alternatively, use firefox and the gecko driver
+# Or, use firefox to create screenshots
 RUN apt-get update && \
 	apt-get install -y --no-install-recommends firefox-esr && \
 	rm -rf /var/lib/apt/lists/*
@@ -28,4 +29,7 @@ FROM base as build
 
 COPY src /code/src
 COPY pom.xml /code/pom.xml
-COPY src/main/resources/application.users-file.example /code/src/main/resources/application.users-file
+COPY src/main/resources/application.users-file.example /var/data/pagebuilder/application.users-file
+
+RUN mkdir /code/.m2 && \
+	mvn dependency:copy-dependencies -DoutputDirectory=/code/.m2
