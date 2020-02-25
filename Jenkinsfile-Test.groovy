@@ -20,7 +20,7 @@ pipeline {
 
         USERS_FILE = '/var/data/pagebuilder/application.users-file'
 
-        BASE_URL = "https://pagebuilder.opendatahub.testingmachine.eu"
+        BASE_URL = "https://pagebuilder2.opendatahub.testingmachine.eu"
         PAGES_DOMAIN_NAME = "pagebuildersites.opendatahub.testingmachine.eu"
         PAGES_ALLOW_SUBDOMAINS = "true"
 
