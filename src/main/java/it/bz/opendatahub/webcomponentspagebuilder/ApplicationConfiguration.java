@@ -33,6 +33,7 @@ import it.bz.opendatahub.webcomponentspagebuilder.data.UsersProvider;
 import it.bz.opendatahub.webcomponentspagebuilder.data.WebComponentsStorePageComponentsProvider;
 import it.bz.opendatahub.webcomponentspagebuilder.deployment.AwsBasedDeploymentPipeline;
 import it.bz.opendatahub.webcomponentspagebuilder.rendering.screenshots.ChromeWebDriverScreenshotRenderer;
+import it.bz.opendatahub.webcomponentspagebuilder.rendering.screenshots.GeckoWebDriverScreenshotRenderer;
 import it.bz.opendatahub.webcomponentspagebuilder.rendering.screenshots.ScreenshotRenderer;
 
 /**
@@ -171,7 +172,8 @@ public class ApplicationConfiguration {
 	@Bean
 	@Lazy
 	public ScreenshotRenderer screenshotRenderer() {
-		return new ChromeWebDriverScreenshotRenderer("/usr/bin/chromedriver", "/usr/bin/chromium");
+		//return new ChromeWebDriverScreenshotRenderer("/usr/bin/chromedriver", "/usr/bin/chromium");
+		return new GeckoWebDriverScreenshotRenderer("/usr/bin/geckodriver", "/usr/bin/firefox");
 	}
 
 	@Bean
