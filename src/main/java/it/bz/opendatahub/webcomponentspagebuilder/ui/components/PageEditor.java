@@ -75,8 +75,8 @@ public class PageEditor extends PolymerTemplate<TemplateModel> {
 		pageContent.setAssets(Arrays.asList(assets));
 		pageContent.setTagName(tagName);
 		pageContent.setMarkup(markup);
-		pageContent.setPosition(
-				pageVersion.getContents().stream().map(PageContent::getPosition).max(Integer::compare).orElse(-1) + 1);
+		pageContent.setPosition(pageVersion.getContents().stream().filter(content -> content != null)
+				.map(PageContent::getPosition).max(Integer::compare).orElse(-1) + 1);
 
 		pageVersion.getContents().add(pageContent);
 
@@ -129,7 +129,8 @@ public class PageEditor extends PolymerTemplate<TemplateModel> {
 	@ClientCallable
 	public void editContent(String uuid) {
 		List<PageContent> matches = pageVersion.getContents().stream()
-				.filter(content -> content.getContentID().toString().equals(uuid)).collect(Collectors.toList());
+				.filter(content -> content != null && content.getContentID().toString().equals(uuid))
+				.collect(Collectors.toList());
 
 		if (!matches.isEmpty()) {
 			PageContent pageContent = matches.get(0);
@@ -152,7 +153,7 @@ public class PageEditor extends PolymerTemplate<TemplateModel> {
 	public void rearrangedContents(String[] uuids) {
 		Map<String, PageContent> pageContentsById = new HashMap<>();
 
-		pageVersion.getContents().forEach(pageContent -> {
+		pageVersion.getContents().stream().filter(content -> content != null).forEach(pageContent -> {
 			pageContentsById.put(pageContent.getContentID().toString(), pageContent);
 		});
 
@@ -175,7 +176,8 @@ public class PageEditor extends PolymerTemplate<TemplateModel> {
 	@ClientCallable
 	public void removedContent(String uuid) {
 		pageVersion.setContents(pageVersion.getContents().stream()
-				.filter(content -> !content.getContentID().toString().equals(uuid)).collect(Collectors.toList()));
+				.filter(content -> content != null && !content.getContentID().toString().equals(uuid))
+				.collect(Collectors.toList()));
 
 		updateHandler.ifPresent(UpdateHandler::pageChanged);
 	}

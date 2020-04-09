@@ -215,8 +215,9 @@ public class ManagePageView extends VerticalLayout implements HasUrlParameter<St
 				discardButton.setVisible(!page.getArchived());
 
 				image.setSrc(String.format("/pages/preview/%s.png?%s", getPageVersion().getIdAsString(),
-						DigestUtils.md5Hex(StringUtils.join(getPageVersion().getContents().stream()
-								.map(PageContent::getMarkup).collect(Collectors.toList())))));
+						DigestUtils.md5Hex(StringUtils
+								.join(getPageVersion().getContents().stream().filter(content -> content != null)
+										.map(PageContent::getMarkup).collect(Collectors.toList())))));
 			} else {
 				addClassName("is-version-placeholder");
 
@@ -415,8 +416,9 @@ public class ManagePageView extends VerticalLayout implements HasUrlParameter<St
 				actions.setVisible(true);
 
 				image.setSrc(String.format("/pages/preview/%s.png?%s", getPageVersion().getIdAsString(),
-						DigestUtils.md5Hex(StringUtils.join(getPageVersion().getContents().stream()
-								.map(PageContent::getMarkup).collect(Collectors.toList())))));
+						DigestUtils.md5Hex(StringUtils
+								.join(getPageVersion().getContents().stream().filter(content -> content != null)
+										.map(PageContent::getMarkup).collect(Collectors.toList())))));
 
 				PagePublication publication = page.getPublication();
 				if (publication != null) {

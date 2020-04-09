@@ -21,13 +21,13 @@ public class DeploymentManifest {
 
 		PagePublication pagePublication = page.getPublication();
 
-		domainName = pagePublication.getDomainName();
-
 		if (pagePublication.getSubdomainName() != null) {
-			domainName = String.format("%s.%s", pagePublication.getSubdomainName(), domainName);
+			setDomainName(String.format("%s.%s", pagePublication.getSubdomainName(), pagePublication.getDomainName()));
+		} else {
+			setDomainName(pagePublication.getDomainName());
 		}
 
-		pagePublication.getPathName();
+		setPathName(pagePublication.getPathName());
 	}
 
 	public String getDomainName() {
