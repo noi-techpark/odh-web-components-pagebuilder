@@ -104,12 +104,13 @@ public class PublishingController {
 		publishedVersion.setTitle(publishedVersion.getTitle());
 		publishedVersion.setDescription(publishedVersion.getDescription());
 
-		publishedVersion.setContents(pageVersion.getContents().stream().map(pageContent -> {
-			PageContent copy = pageContent.copy();
-			copy.setPageVersion(publishedVersion);
+		publishedVersion
+				.setContents(pageVersion.getContents().stream().filter(content -> content != null).map(pageContent -> {
+					PageContent copy = pageContent.copy();
+					copy.setPageVersion(publishedVersion);
 
-			return copy;
-		}).collect(Collectors.toList()));
+					return copy;
+				}).collect(Collectors.toList()));
 
 		publishedVersion.setWidgets(pageVersion.getWidgets().stream().map(pageWidget -> {
 			PageWidget copy = pageWidget.copy();
@@ -133,12 +134,13 @@ public class PublishingController {
 			draftVersion.setTitle(publicVersion.getTitle());
 			draftVersion.setDescription(publicVersion.getDescription());
 
-			draftVersion.setContents(publicVersion.getContents().stream().map(pageContent -> {
-				PageContent copy = pageContent.copy();
-				copy.setPageVersion(draftVersion);
+			draftVersion.setContents(
+					publicVersion.getContents().stream().filter(content -> content != null).map(pageContent -> {
+						PageContent copy = pageContent.copy();
+						copy.setPageVersion(draftVersion);
 
-				return copy;
-			}).collect(Collectors.toList()));
+						return copy;
+					}).collect(Collectors.toList()));
 
 			draftVersion.setWidgets(publicVersion.getWidgets().stream().map(pageWidget -> {
 				PageWidget copy = pageWidget.copy();

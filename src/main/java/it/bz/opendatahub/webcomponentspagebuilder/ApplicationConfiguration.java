@@ -135,7 +135,7 @@ public class ApplicationConfiguration {
 	public DomainsProvider domainsProvider() {
 		DefaultDomainsProvider provider = new DefaultDomainsProvider();
 
-		provider.add(String.format("https://%s", pagesDomainName), pagesSubdomainsAllowed,
+		provider.add(pagesDomainName, pagesSubdomainsAllowed,
 				new AwsBasedDeploymentPipeline(awsRegionName, awsAccessKey, awsAccessSecret));
 
 		return provider;

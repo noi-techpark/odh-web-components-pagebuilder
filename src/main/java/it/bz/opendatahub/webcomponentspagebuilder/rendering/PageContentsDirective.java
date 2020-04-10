@@ -5,6 +5,7 @@ import java.io.Writer;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import freemarker.core.Environment;
 import freemarker.template.TemplateDirectiveBody;
@@ -37,9 +38,12 @@ public class PageContentsDirective implements TemplateDirectiveModel {
 
 		Set<String> assets = new HashSet<>();
 
-		for (PageContent pageContent : pageVersion.getContents()) {
-			for (String asset : pageContent.getAssets()) {
-				assets.add(asset);
+		for (PageContent pageContent : pageVersion.getContents().stream().filter(content -> content != null)
+				.collect(Collectors.toList())) {
+			if (pageContent.getAssets() != null) {
+				for (String asset : pageContent.getAssets()) {
+					assets.add(asset);
+				}
 			}
 
 			out.append(String.format("<div id=\"%s\" class=\"odh-page-content\">\n%s\n</div>\n",
