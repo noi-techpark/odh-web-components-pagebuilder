@@ -8,7 +8,7 @@ import org.openqa.selenium.remote.RemoteWebDriver;
 /**
  * Screenshot renderer implementation based on Firefox/Gecko browser and
  * WebDriver.
- * 
+ *
  * @author danielrampanelli
  */
 public class GeckoWebDriverScreenshotRenderer extends WebDriverScreenshotRenderer {
@@ -33,7 +33,7 @@ public class GeckoWebDriverScreenshotRenderer extends WebDriverScreenshotRendere
 		FirefoxOptions options = new FirefoxOptions();
 		options.setAcceptInsecureCerts(true);
 		options.setHeadless(true);
-		options.setLogLevel(FirefoxDriverLogLevel.DEBUG);
+		options.setLogLevel(FirefoxDriverLogLevel.ERROR);
 		options.addArguments("--width=1280");
 		options.addArguments("--height=960");
 		options.addArguments("--safe-mode");
