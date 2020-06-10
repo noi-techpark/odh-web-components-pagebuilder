@@ -25,24 +25,34 @@ import it.bz.opendatahub.webcomponentspagebuilder.data.entities.PageVersion;
 @Component
 public class PageRenderer {
 
-	public String renderPage(PageVersion pageVersion) throws TemplateNotFoundException, MalformedTemplateNameException,
-			ParseException, IOException, TemplateException {
+	private String render(PageVersion pageVersion, String templateFile) throws TemplateNotFoundException,
+			MalformedTemplateNameException, ParseException, IOException, TemplateException {
 		ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 
 		Writer writer = new OutputStreamWriter(outputStream);
 
 		Configuration configuration = new Configuration(Configuration.VERSION_2_3_28);
-		configuration.setClassForTemplateLoading(PageRenderer.class, "/templates");
+		configuration.setClassForTemplateLoading(PageRenderer.class, "/templates/main");
 		configuration.setSharedVariable("metatags", new PageMetaTagsDirective(pageVersion));
 		configuration.setSharedVariable("contents", new PageContentsDirective(pageVersion));
 		configuration.setSharedVariable("widgets", new PageWidgetsDirective(pageVersion));
 
-		Template template = configuration.getTemplate("default.ftl");
+		Template template = configuration.getTemplate(templateFile);
 		template.process(new HashMap<>(), writer);
 
 		writer.close();
 
 		return outputStream.toString();
+	}
+
+	public String renderPage(PageVersion pageVersion) throws TemplateNotFoundException, MalformedTemplateNameException,
+			ParseException, IOException, TemplateException {
+		return render(pageVersion, "index.ftl");
+	}
+
+	public String renderPreview(PageVersion pageVersion) throws TemplateNotFoundException,
+			MalformedTemplateNameException, ParseException, IOException, TemplateException {
+		return render(pageVersion, "preview.ftl");
 	}
 
 }

@@ -4,6 +4,11 @@
             height: 76px;
         }
         
+        .manage-page-view .page-part {
+            min-width: 200px;
+            max-width: 420px;
+        }
+        
         .edit-page-version-view {
             overflow: hidden;
             padding: 0 0 1em 0;
@@ -26,15 +31,32 @@
             opacity: 0.75;
         }
     
-        .manage-page-view .is-version-placeholder {
-            border: 8px dashed #ababab;
-            min-height: 240px;
+        .manage-page-view .is-version-placeholder .placeholder-wrapper {
+            box-sizing: border-box;
             position: relative;
+            width: 100%;
+        }
+    
+        .manage-page-view .is-version-placeholder .placeholder-wrapper:before {
+            border: 8px dashed #dedede;
+            bottom: 0;
+            content: '';
+            display: block;
+            left: 0;
+            position: absolute;
+            right: 0;
+            top: 0;
+        }
+    
+        .manage-page-view .is-version-placeholder .placeholder-wrapper:after {
+            content: '';
+            display: block;
+            padding-bottom: 140%;
         }
         
-        .manage-page-view .is-version-placeholder .placeholder-contents {
-            margin: 0;
-            padding: 32px;
+        .manage-page-view .is-version-placeholder .placeholder-wrapper .placeholder-contents {
+            left: 0;
+            padding: 2em;
             position: absolute;
             top: 50%;
             transform: translateY(-50%);
@@ -60,17 +82,90 @@
             background-color: #3CB371;
         }
         
+        .manage-page-view .contains-remote-page-part .status-wrapper {
+            position: relative;
+            width: 100%;
+        }
+        
+        .manage-page-view .contains-remote-page-part .status-wrapper:after {
+            content: '';
+            display: block;
+            padding-bottom: 140%;
+        }
+        
+        .manage-page-view .contains-remote-page-part .status-wrapper .status-wrapped-content {
+            border: 8px dashed #dedede;
+            box-sizing: border-box;
+            bottom: 0;
+            left: 0;
+            position: absolute;
+            right: 0;
+            top: 0;
+        }
+        
+        .manage-page-view .contains-remote-page-part .contains-status {
+            left: 0;
+            position: absolute;
+            text-align: center;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+        
+        .manage-page-view .contains-remote-page-part .contains-status .icon {
+            height: 96px;
+            margin: 0 0 2em 0;
+            opacity: 0.5;
+            width: 96px;
+        }
+        
+        .manage-page-view .contains-remote-page-part .contains-status .percentage {
+            font-size: 64px;
+        }
+        
         .edit-page-version-view .page-editor-wrapper {
             background-color: #333333;
-            overflow: auto;
-            padding: 32px;
-            text-align: center;
+            overflow: hidden;
+        }
+        
+        .edit-page-version-view .page-editor-wrapper pagebuilder-page-editor {
+            margin-left: auto;
+            margin-right: auto;
+            max-width: 100%;
+        }
+        
+        .edit-page-version-view .page-editor-wrapper pagebuilder-page-editor.mobile {
+            max-width: 384px;
+        }
+        
+        .edit-page-version-view .page-editor-wrapper pagebuilder-page-editor.tablet {
+            max-width: 768px;
+        }
+        
+        .edit-page-version-view .page-editor-wrapper pagebuilder-page-editor.desktop {
+            max-width: 1024px;
+        }
+        
+        .edit-page-version-view .page-editor-wrapper vaadin-tabs vaadin-tab {
+            color: #999999;
+        }
+        
+        .edit-page-version-view .page-editor-wrapper vaadin-tabs vaadin-tab[selected] {
+            color: #ffffff;
+        }
+        
+        .edit-page-version-view .page-editor-wrapper vaadin-tabs vaadin-tab[selected]:before,
+        .edit-page-version-view .page-editor-wrapper vaadin-tabs vaadin-tab[selected]:after {
+            background-color: #ffffff;
         }
         
         .edit-page-version-view .contains-sidebar {
             box-sizing: border-box;
             flex: 0 0 376px;
             padding: 0 0 0 1em;
+        }
+        
+        .edit-page-version-view .contains-sidebar-components {
+            overflow: auto;
         }
         
         .edit-page-version-view .contains-sidebar .placeholder {
@@ -80,10 +175,11 @@
         
         .edit-page-version-view .contains-library {
             box-sizing: border-box;
-            flex: 0 0 376px;
+            flex: 0 0 440px;
         }
         
-        .edit-page-version-view .contains-library .components {
+        .edit-page-version-view .contains-library .components,
+        .edit-page-version-view .contains-widgets {
             margin-left: -8px;
             margin-right: -8px;
             margin-top: 9px;
@@ -91,7 +187,8 @@
             overflow-y: scroll;
         }
         
-        .edit-page-version-view .contains-library .components .page-component-card {
+        .edit-page-version-view .contains-library .components .page-component-card,
+        .edit-page-version-view .contains-widgets .page-widget-card {
             background-color: #ffffff;
             cursor: move;
             display: inline-block;

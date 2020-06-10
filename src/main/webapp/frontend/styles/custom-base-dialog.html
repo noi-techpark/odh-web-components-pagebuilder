@@ -1,0 +1,25 @@
+<custom-style>
+    <style>
+        .custom-base-dialog .dialog-title {
+            font-weight: bold;
+            padding: 0 1em;
+        }
+    </style>
+</custom-style>
+
+<dom-module id="custom-base-dialog" theme-for="vaadin-dialog-overlay">
+    <template>
+	    <style>
+			:host([theme="custom-base-dialog-fullscreen"]) [part="overlay"] {
+			    height: 100%;
+                width: 100%;
+            }
+			
+			:host([theme="custom-base-dialog"]) [part="content"],
+			:host([theme="custom-base-dialog-fullscreen"]) [part="content"] {
+			    height: 100%;
+			    padding: 0;
+			}
+	    </style>
+    </template>
+</dom-module>

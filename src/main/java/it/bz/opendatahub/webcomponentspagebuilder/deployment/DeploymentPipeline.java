@@ -8,8 +8,9 @@ package it.bz.opendatahub.webcomponentspagebuilder.deployment;
  */
 public interface DeploymentPipeline {
 
-	public void deploy(DeploymentManifest manifest, DeploymentPayload payload);
+	public void deploy(DeploymentManifest manifest, DeploymentPayload payload,
+			DeploymentProgressHandler progressHandler);
 
-	public void undeploy(DeploymentManifest manifest);
+	public void undeploy(DeploymentManifest manifest, DeploymentProgressHandler progressHandler);
 
 }

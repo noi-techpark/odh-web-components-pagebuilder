@@ -42,7 +42,7 @@ public class PageWidgetCard extends Card {
 		this.widget = widget;
 
 		addClassName("page-widget-card");
-		setWidth("360px");
+		setWidth("425px");
 	}
 
 	public PageComponent getComponent() {

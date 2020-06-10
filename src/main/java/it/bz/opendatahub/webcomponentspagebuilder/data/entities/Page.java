@@ -8,6 +8,7 @@ import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
@@ -31,22 +32,23 @@ public class Page extends BaseEntity {
 	@NotNull
 	private String label;
 
-	@OneToOne(cascade = CascadeType.ALL, fetch = FetchType.EAGER, orphanRemoval = true)
+	@OneToOne(cascade = { CascadeType.PERSIST, CascadeType.REFRESH }, fetch = FetchType.LAZY, orphanRemoval = false)
 	@JoinColumn(name = "draft_version_id")
 	private PageVersion draftVersion;
 
-	@OneToOne(cascade = CascadeType.ALL, fetch = FetchType.EAGER, orphanRemoval = false)
+	@OneToOne(cascade = { CascadeType.PERSIST, CascadeType.REFRESH }, fetch = FetchType.LAZY, orphanRemoval = false)
 	@JoinColumn(name = "public_version_id")
 	private PageVersion publicVersion;
 
-	@OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER, mappedBy = "page", orphanRemoval = true)
+	@OneToMany(cascade = { CascadeType.PERSIST,
+			CascadeType.REFRESH }, fetch = FetchType.LAZY, mappedBy = "page", orphanRemoval = true)
 	private Set<PageVersion> versions = new HashSet<>();
 
-	@OneToOne(cascade = CascadeType.ALL, fetch = FetchType.EAGER, orphanRemoval = false)
-	@JoinColumn(name = "publication_id")
-	private PagePublication publication;
+	@ManyToOne(cascade = { CascadeType.REFRESH }, fetch = FetchType.LAZY)
+	@JoinColumn(name = "site_id")
+	private Site site;
 
-	@OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER, mappedBy = "page", orphanRemoval = true)
+	@OneToMany(cascade = { CascadeType.REFRESH }, fetch = FetchType.LAZY, mappedBy = "page", orphanRemoval = true)
 	private Set<PagePublication> publications = new HashSet<>();
 
 	public Page() {
@@ -73,12 +75,20 @@ public class Page extends BaseEntity {
 		return draftVersion;
 	}
 
+	public boolean hasDraftVersion() {
+		return draftVersion != null;
+	}
+
 	public void setDraftVersion(PageVersion draftVersion) {
 		this.draftVersion = draftVersion;
 	}
 
 	public PageVersion getPublicVersion() {
 		return publicVersion;
+	}
+
+	public boolean hasPublicVersion() {
+		return publicVersion != null;
 	}
 
 	public void setPublicVersion(PageVersion publicVersion) {
@@ -103,12 +113,16 @@ public class Page extends BaseEntity {
 		}
 	}
 
-	public PagePublication getPublication() {
-		return publication;
+	public Site getSite() {
+		return site;
 	}
 
-	public void setPublication(PagePublication publication) {
-		this.publication = publication;
+	public boolean hasSite() {
+		return site != null;
+	}
+
+	public void setSite(Site site) {
+		this.site = site;
 	}
 
 	public Set<PagePublication> getPublications() {
@@ -121,6 +135,12 @@ public class Page extends BaseEntity {
 
 	public void addPublication(PagePublication publication) {
 		this.publications.add(publication);
+	}
+
+	public void removePublication(PagePublication publication) {
+		if (publication != null) {
+			this.publications.remove(publication);
+		}
 	}
 
 }

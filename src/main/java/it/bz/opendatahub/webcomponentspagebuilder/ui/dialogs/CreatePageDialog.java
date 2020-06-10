@@ -27,6 +27,7 @@ import it.bz.opendatahub.webcomponentspagebuilder.data.DomainsProvider;
 import it.bz.opendatahub.webcomponentspagebuilder.data.entities.Page;
 import it.bz.opendatahub.webcomponentspagebuilder.data.entities.PageVersion;
 import it.bz.opendatahub.webcomponentspagebuilder.data.repositories.PageRepository;
+import it.bz.opendatahub.webcomponentspagebuilder.data.repositories.PageVersionRepository;
 
 /**
  * Dialog for managing the settings (label, title and description) of a new page
@@ -89,11 +90,15 @@ public class CreatePageDialog extends Dialog {
 	@Autowired
 	PageRepository pagesRepo;
 
+	@Autowired
+	PageVersionRepository versionsRepo;
+
 	private Optional<SaveHandler> saveHandler = Optional.empty();
 
 	@PostConstruct
 	private void postConstruct() {
 		TextField label = new TextField();
+		label.setAutofocus(true);
 		label.setLabel("LABEL");
 		label.setWidthFull();
 
@@ -138,7 +143,11 @@ public class CreatePageDialog extends Dialog {
 						newPageVersion.setTitle(bean.getTitle());
 						newPageVersion.setDescription(bean.getDescription());
 
+						newPageVersion = versionsRepo.save(newPageVersion);
+
 						createdPage.setDraftVersion(newPageVersion);
+						createdPage.addVersion(newPageVersion);
+
 						createdPage = pagesRepo.save(newPage);
 
 						handler.created(createdPage);

@@ -22,10 +22,13 @@ import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.dependency.HtmlImport;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Label;
+import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.tabs.Tab;
 import com.vaadin.flow.component.tabs.Tabs;
+import com.vaadin.flow.component.tabs.TabsVariant;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.Binder;
@@ -106,6 +109,10 @@ public class EditPageVersionView extends VerticalLayout
 
 	private Label widgetsPlaceholder;
 
+	private VerticalLayout editorWrapper;
+
+	private Tabs viewportSize;
+
 	@PostConstruct
 	private void postConstruct() {
 		pageTitle = new RouterLink();
@@ -119,9 +126,13 @@ public class EditPageVersionView extends VerticalLayout
 		Button publishButton = new Button("PUBLISH");
 		publishButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
 		publishButton.addClickListener(e -> {
-			publishingController.publish(pageVersion, (updatedPage, updatedPageVersion) -> {
-				UI.getCurrent().navigate(ManagePageView.class, updatedPage.getIdAsString());
-			});
+			if (publishingController.isLocked(pageVersion.getPage())) {
+				new PageLockedDialog().open();
+			} else {
+				publishingController.publish(pageVersion, (updatedPage, updatedPageVersion) -> {
+					UI.getCurrent().navigate(ManagePageView.class, updatedPage.getIdAsString());
+				});
+			}
 		});
 
 		Button discardButton = new Button("DISCARD");
@@ -130,12 +141,13 @@ public class EditPageVersionView extends VerticalLayout
 			publishingController.discard(pageVersion, (updatedPage) -> {
 				UI.getCurrent().navigate(ManagePageView.class, updatedPage.getIdAsString());
 
-				eventPublisher.publishEvent(new PageVersionRemovedEvent(pageVersion));
+				new Thread(() -> {
+					eventPublisher.publishEvent(new PageVersionRemovedEvent(pageVersion));
+				}).start();
 			});
 		});
 
 		editor = new PageEditor();
-
 		editor.setUpdateHandler(() -> save());
 
 		Div pageTitleWrapper = new Div(pageTitle);
@@ -161,11 +173,26 @@ public class EditPageVersionView extends VerticalLayout
 		headerLayout.setFlexGrow(1, pageTitleAndStatus);
 		headerLayout.setFlexGrow(0, headerButtons);
 
-		Div editorWrapper = new Div();
+		editorWrapper = new VerticalLayout();
 		editorWrapper.addClassName("page-editor-wrapper");
+		editorWrapper.setMargin(false);
+		editorWrapper.setPadding(true);
+		editorWrapper.setSpacing(true);
 		editorWrapper.setWidth("100%");
 		editorWrapper.setHeight(null);
 		editorWrapper.add(editor);
+		editorWrapper.expand(editor);
+
+		viewportSize = new Tabs();
+		viewportSize.addThemeVariants(TabsVariant.LUMO_SMALL);
+		viewportSize.add(new Tab(VaadinIcon.ARROWS_LONG_H.create(), new Span("Auto")));
+		viewportSize.add(new Tab(VaadinIcon.MOBILE.create(), new Span("Mobile")));
+		viewportSize.add(new Tab(VaadinIcon.TABLET.create(), new Span("Tablet")));
+		viewportSize.add(new Tab(VaadinIcon.DESKTOP.create(), new Span("Desktop")));
+		viewportSize.addSelectedChangeListener(e -> updateViewport());
+
+		editorWrapper.add(viewportSize);
+		editorWrapper.setHorizontalComponentAlignment(Alignment.CENTER, viewportSize);
 
 		availableComponents = new Div();
 		availableComponents.addClassName("components");
@@ -182,8 +209,23 @@ public class EditPageVersionView extends VerticalLayout
 		contentLayout.setSpacing(true);
 		contentLayout.setSizeFull();
 
-		Tab widgetsTab = new Tab("WIDGETS");
-		Tab metadataTab = new Tab("METADATA");
+		Tab componentsTab = new Tab();
+		componentsTab.add(VaadinIcon.CUBES.create());
+		componentsTab.add("COMPONENTS");
+
+		VerticalLayout library = new VerticalLayout();
+		library.addClassName("contains-library");
+		library.setMargin(false);
+		library.setPadding(false);
+		library.add(availableComponents);
+
+		Tab widgetsTab = new Tab();
+		widgetsTab.add(VaadinIcon.MAGIC.create());
+		widgetsTab.add("WIDGETS");
+
+		Tab metadataTab = new Tab();
+		metadataTab.add(VaadinIcon.COGS.create());
+		metadataTab.add("METADATA");
 
 		TextField pageTitle = new TextField();
 		pageTitle.setLabel("TITLE");
@@ -222,17 +264,19 @@ public class EditPageVersionView extends VerticalLayout
 		VerticalLayout widgetsWrapper = new VerticalLayout();
 		widgetsWrapper.setMargin(false);
 		widgetsWrapper.setPadding(false);
-		widgetsWrapper.setSpacing(false);
+		widgetsWrapper.setSpacing(true);
 		widgetsWrapper.add(widgetsLayout);
 		widgetsWrapper.add(widgetsPlaceholder);
 
 		widgetsPlaceholder.setVisible(false);
 
 		Map<Tab, Component> tabsToPages = new HashMap<>();
+		tabsToPages.put(componentsTab, library);
 		tabsToPages.put(widgetsTab, widgetsWrapper);
 		tabsToPages.put(metadataTab, metadataLayout);
 
 		Tabs sidebarTabs = new Tabs();
+		sidebarTabs.add(componentsTab);
 		sidebarTabs.add(widgetsTab);
 		sidebarTabs.add(metadataTab);
 		sidebarTabs.setFlexGrowForEnclosedTabs(1);
@@ -246,8 +290,9 @@ public class EditPageVersionView extends VerticalLayout
 		tabsToPages.values().forEach(page -> page.setVisible(false));
 		tabsToPages.get(sidebarTabs.getSelectedTab()).setVisible(true);
 
-		Div sidebarComponents = new Div(widgetsWrapper, metadataLayout);
-		sidebarComponents.setWidthFull();
+		Div sidebarComponents = new Div(library, widgetsWrapper, metadataLayout);
+		sidebarComponents.addClassName("contains-sidebar-components");
+		sidebarComponents.setSizeFull();
 
 		VerticalLayout sidebar = new VerticalLayout();
 		sidebar.addClassName("contains-sidebar");
@@ -261,18 +306,10 @@ public class EditPageVersionView extends VerticalLayout
 		sidebar.add(sidebarComponents);
 		sidebar.setFlexGrow(1, sidebarComponents);
 
-		VerticalLayout library = new VerticalLayout();
-		library.addClassName("contains-library");
-		library.setMargin(false);
-		library.setPadding(false);
-		library.add(availableComponents);
-
 		contentLayout.add(sidebar);
 		contentLayout.add(editorWrapper);
-		contentLayout.add(library);
 		contentLayout.setFlexGrow(0, sidebar);
 		contentLayout.setFlexGrow(1, editorWrapper);
-		contentLayout.setFlexGrow(0, library);
 
 		add(headerLayout);
 		add(contentLayout);
@@ -282,6 +319,24 @@ public class EditPageVersionView extends VerticalLayout
 		setPadding(false);
 		setSizeFull();
 		setSpacing(false);
+	}
+
+	private void updateViewport() {
+		editor.getElement().getClassList().remove("mobile");
+		editor.getElement().getClassList().remove("tablet");
+		editor.getElement().getClassList().remove("desktop");
+
+		if (viewportSize.getSelectedIndex() == 1) {
+			editor.getElement().getClassList().add("mobile");
+		}
+
+		if (viewportSize.getSelectedIndex() == 2) {
+			editor.getElement().getClassList().add("tablet");
+		}
+
+		if (viewportSize.getSelectedIndex() == 3) {
+			editor.getElement().getClassList().add("desktop");
+		}
 	}
 
 	private void save() {
@@ -304,7 +359,9 @@ public class EditPageVersionView extends VerticalLayout
 						binder.setBean(pageVersion);
 						editor.setPageVersion(pageVersion);
 
-						eventPublisher.publishEvent(new PageVersionUpdatedEvent(pageVersion));
+						new Thread(() -> {
+							eventPublisher.publishEvent(new PageVersionUpdatedEvent(pageVersion));
+						}).start();
 					}
 
 					time += System.currentTimeMillis();

@@ -1,0 +1,90 @@
+<dom-module id="page-element-markup-field">
+	<template>
+        <style>
+	        :host {
+	            height: 100%;
+	            position: relative;
+	            width: 100%;
+	        }
+	        
+	        #field {
+	            bottom: 0;
+	            height: 100%;
+	            left: 0;
+	            position: absolute;
+	            right: 0;
+	            top: 0;
+	            width: 100%;
+	        }
+	    </style>
+		<div id="field"></div>
+	</template>
+	<script>
+		class PageElementMarkupField extends Polymer.Element {
+
+		    static get is() {
+		        return 'page-element-markup-field';
+		    }
+		    
+		    debounce(func, wait, immediate) {
+		        var timeout;
+		        return function() {
+		            var context = this, args = arguments;
+		            var later = function() {
+		                timeout = null;
+		                if (!immediate) func.apply(context, args);
+		            };
+		            var callNow = immediate && !timeout;
+		            clearTimeout(timeout);
+		            timeout = setTimeout(later, wait);
+		            if (callNow) func.apply(context, args);
+		        };
+		    }
+
+		    created() {
+		    	this.editor = null;
+		    }
+
+		    setEditorText(text) {
+		    	this.editor.setValue(text);
+		    }
+ 
+		    ready() {
+		    	super.ready();
+		    	
+		    	var self = this;
+		    	var root = this.shadowRoot;
+
+		    	self.editor = ace.edit(root.querySelector('#field'), {
+		    		mode: 'ace/mode/xml',
+		    		selectionStyle: 'text'
+		    	});
+
+		    	self.editor.setTheme('ace/theme/monokai');
+		    	
+		    	self.editor.setOptions({
+		    		fontSize: '12pt',
+		    		printMargin: false,
+		    		wrap: true
+		    	});
+
+		    	self.editor.on('input', self.debounce(function() {
+                    self.$server.updateText(self.editor.getValue());
+                }, 500));
+
+		    	var style;
+
+		    	style = document.createElement('style');
+		    	style.innerHTML = document.getElementById('ace-tm').innerHTML;
+		    	root.appendChild(style);
+
+		    	style = document.createElement('style');
+		    	style.innerHTML = document.getElementById('ace_editor.css').innerHTML;
+		    	root.appendChild(style);
+		    }
+
+		}
+
+		customElements.define(PageElementMarkupField.is, PageElementMarkupField);
+	</script>
+</dom-module>

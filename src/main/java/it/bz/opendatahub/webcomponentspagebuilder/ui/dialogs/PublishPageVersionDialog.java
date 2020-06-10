@@ -98,7 +98,7 @@ public class PublishPageVersionDialog extends Dialog {
 				return toResult(value, true);
 			}
 
-			return toResult(value, Pattern.matches("^[a-zA-Z0-9\\\\-_]{3,}$", value));
+			return toResult(value, Pattern.matches("^[a-zA-Z0-9\\-\\_]{3,}$", value));
 		}
 
 	}

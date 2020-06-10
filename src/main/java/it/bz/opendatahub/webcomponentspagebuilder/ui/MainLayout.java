@@ -1,7 +1,6 @@
 package it.bz.opendatahub.webcomponentspagebuilder.ui;
 
 import com.vaadin.flow.component.HasElement;
-import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.applayout.AbstractAppRouterLayout;
 import com.vaadin.flow.component.applayout.AppLayout;
 import com.vaadin.flow.component.applayout.AppLayoutMenu;
@@ -15,6 +14,7 @@ import com.vaadin.flow.server.PWA;
 
 import it.bz.opendatahub.webcomponentspagebuilder.security.SecurityUtils;
 import it.bz.opendatahub.webcomponentspagebuilder.ui.views.ArchiveView;
+import it.bz.opendatahub.webcomponentspagebuilder.ui.views.DeploymentView;
 import it.bz.opendatahub.webcomponentspagebuilder.ui.views.PagesView;
 
 /**
@@ -40,12 +40,8 @@ public class MainLayout extends AbstractAppRouterLayout {
 
 			addMenuItem(menu, new AppLayoutMenuItem(VaadinIcon.ARCHIVE.create(), "ARCHIVE", ArchiveView.ROUTE));
 
-//			if (SecurityUtils.isAccessGranted(UsersView.class)) {
-//				addMenuItem(menu, new AppLayoutMenuItem(VaadinIcon.USER.create(), TITLE_USERS, PAGE_USERS));
-//			}
-
-			addMenuItem(menu, new AppLayoutMenuItem(VaadinIcon.EXIT.create(), "LOGOUT",
-					e -> UI.getCurrent().getPage().executeJavaScript("location.assign('logout')")));
+			addMenuItem(menu,
+					new AppLayoutMenuItem(VaadinIcon.CLOUD_UPLOAD.create(), "DEPLOYMENT", DeploymentView.ROUTE));
 		}
 	}
 

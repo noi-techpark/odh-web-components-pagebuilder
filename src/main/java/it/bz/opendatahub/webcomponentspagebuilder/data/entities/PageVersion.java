@@ -29,15 +29,20 @@ import org.springframework.data.jpa.convert.threeten.Jsr310JpaConverters;
 @Table(name = "pagebuilder_page_version")
 public class PageVersion extends BaseEntity {
 
-	@ManyToOne(fetch = FetchType.EAGER)
+	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "page_id")
+	@NotNull
 	private Page page;
+
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "publication_id")
+	private PagePublication publication;
 
 	@Column(name = "hash")
 	@NotNull
 	private String hash;
 
-	@Column(name = "updated_datetime")
+	@Column(name = "updated_at")
 	@Convert(converter = Jsr310JpaConverters.LocalDateTimeConverter.class)
 	@NotNull
 	private LocalDateTime updatedAt;
@@ -51,11 +56,11 @@ public class PageVersion extends BaseEntity {
 	@Column(name = "comment")
 	private String comment;
 
-	@OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER, mappedBy = "pageVersion", orphanRemoval = true)
+	@OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY, mappedBy = "pageVersion", orphanRemoval = true)
 	@OrderColumn(name = "position")
 	private List<PageContent> contents = new LinkedList<>();
 
-	@OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER, mappedBy = "pageVersion", orphanRemoval = true)
+	@OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY, mappedBy = "pageVersion", orphanRemoval = true)
 	@OrderColumn(name = "position")
 	private List<PageWidget> widgets = new LinkedList<>();
 
@@ -69,6 +74,14 @@ public class PageVersion extends BaseEntity {
 
 	public void setPage(Page page) {
 		this.page = page;
+	}
+
+	public PagePublication getPublication() {
+		return publication;
+	}
+
+	public void setPublication(PagePublication publication) {
+		this.publication = publication;
 	}
 
 	public String getHash() {

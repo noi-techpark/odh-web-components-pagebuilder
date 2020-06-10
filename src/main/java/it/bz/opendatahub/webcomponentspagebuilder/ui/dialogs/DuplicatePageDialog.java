@@ -31,6 +31,7 @@ import it.bz.opendatahub.webcomponentspagebuilder.data.entities.PageContent;
 import it.bz.opendatahub.webcomponentspagebuilder.data.entities.PageVersion;
 import it.bz.opendatahub.webcomponentspagebuilder.data.entities.PageWidget;
 import it.bz.opendatahub.webcomponentspagebuilder.data.repositories.PageRepository;
+import it.bz.opendatahub.webcomponentspagebuilder.data.repositories.PageVersionRepository;
 
 /**
  * Dialog used for the definition of the settings that will be applied to a
@@ -120,6 +121,9 @@ public class DuplicatePageDialog extends Dialog {
 	@Autowired
 	PageRepository pagesRepo;
 
+	@Autowired
+	PageVersionRepository versionsRepo;
+
 	private Optional<SaveHandler> saveHandler = Optional.empty();
 
 	private Binder<PageToDuplicate> binder;
@@ -155,15 +159,15 @@ public class DuplicatePageDialog extends Dialog {
 				try {
 					PageToDuplicate bean = binder.getBean();
 
-					Page duplicatedPage = new Page();
-					duplicatedPage.setArchived(false);
-					duplicatedPage.setLabel(bean.getLabel());
+					Page candidatePage = new Page();
+					candidatePage.setArchived(false);
+					candidatePage.setLabel(bean.getLabel());
 
 					saveHandler.ifPresent(handler -> {
-						Page createdPage = pagesRepo.save(duplicatedPage);
+						Page duplicatedPage = pagesRepo.save(candidatePage);
 
 						PageVersion duplicatedPageVersion = new PageVersion();
-						duplicatedPageVersion.setPage(createdPage);
+						duplicatedPageVersion.setPage(duplicatedPage);
 						duplicatedPageVersion.setHash(DigestUtils.sha1Hex(UUID.randomUUID().toString()));
 						duplicatedPageVersion.setUpdatedAt(LocalDateTime.now());
 
@@ -184,10 +188,14 @@ public class DuplicatePageDialog extends Dialog {
 							return copy;
 						}).collect(Collectors.toList()));
 
-						createdPage.setDraftVersion(duplicatedPageVersion);
-						createdPage = pagesRepo.save(duplicatedPage);
+						PageVersion newPageVersion = versionsRepo.save(duplicatedPageVersion);
 
-						handler.created(createdPage);
+						duplicatedPage.setDraftVersion(newPageVersion);
+						duplicatedPage.addVersion(newPageVersion);
+
+						duplicatedPage = pagesRepo.save(duplicatedPage);
+
+						handler.created(duplicatedPage);
 					});
 
 					close();

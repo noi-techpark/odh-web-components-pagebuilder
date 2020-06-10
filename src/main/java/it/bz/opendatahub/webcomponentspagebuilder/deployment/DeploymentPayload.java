@@ -6,9 +6,7 @@ import java.io.InputStream;
 import java.util.HashSet;
 import java.util.Set;
 
-import freemarker.template.TemplateException;
-import it.bz.opendatahub.webcomponentspagebuilder.data.entities.PageVersion;
-import it.bz.opendatahub.webcomponentspagebuilder.rendering.PageRenderer;
+import org.apache.commons.io.IOUtils;
 
 /**
  * Object containing all files and assets that need to be deployed in order for
@@ -22,11 +20,9 @@ public class DeploymentPayload {
 
 		private String contentType;
 
-		private Long contentLength;
-
 		private String name;
 
-		private InputStream content;
+		private byte[] content;
 
 		public PayloadFile() {
 
@@ -40,12 +36,9 @@ public class DeploymentPayload {
 			this.contentType = contentType;
 		}
 
-		public Long getContentLength() {
-			return contentLength;
-		}
-
-		public void setContentLength(Long contentLength) {
-			this.contentLength = contentLength;
+		public PayloadFile withContentType(String contentType) {
+			setContentType(contentType);
+			return this;
 		}
 
 		public String getName() {
@@ -56,39 +49,69 @@ public class DeploymentPayload {
 			this.name = name;
 		}
 
-		public InputStream getContent() {
+		public PayloadFile withName(String name) {
+			setName(name);
+			return this;
+		}
+
+		public byte[] getContent() {
 			return content;
 		}
 
-		public void setContent(InputStream content) {
+		public Long getContentLength() {
+			return (long) content.length;
+		}
+
+		public InputStream getContentStream() {
+			return new ByteArrayInputStream(content);
+		}
+
+		public void setContent(byte[] content) {
 			this.content = content;
+		}
+
+		public PayloadFile withInlineContent(String content) {
+			setContent(content.getBytes());
+			return this;
+		}
+
+		public PayloadFile withContent(String content) {
+			setContent(content.getBytes());
+			return this;
+		}
+		
+		public PayloadFile withContent(byte[] content) {
+			setContent(content);
+			return this;
+		}
+
+		public PayloadFile withContent(InputStream content) throws IOException {
+			setContent(IOUtils.toByteArray(content));
+			return this;
 		}
 
 	}
 
 	private Set<PayloadFile> files = new HashSet<>();
 
-	public DeploymentPayload(PageRenderer pageRenderer, PageVersion pageVersion) {
-		try {
-			String renderedPage = pageRenderer.renderPage(pageVersion);
+	public DeploymentPayload() {
 
-			byte[] pageBytes = renderedPage.getBytes();
-
-			PayloadFile payloadFile = new PayloadFile();
-			payloadFile.setName("index.html");
-			payloadFile.setContentType("text/html");
-			payloadFile.setContentLength((long) pageBytes.length);
-			payloadFile.setContent(new ByteArrayInputStream(pageBytes));
-
-			files.add(payloadFile);
-		} catch (IOException | TemplateException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
 	}
 
 	public Set<PayloadFile> getFiles() {
 		return files;
+	}
+	
+	public void add(PayloadFile file) {
+		files.add(file);
+	}
+
+	public DeploymentPayload withFiles(PayloadFile... payloadFiles) {
+		for (PayloadFile file : payloadFiles) {
+			files.add(file);
+		}
+
+		return this;
 	}
 
 }

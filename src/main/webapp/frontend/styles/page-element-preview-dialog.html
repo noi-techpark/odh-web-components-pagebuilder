@@ -1,0 +1,72 @@
+<custom-style>
+    <style>
+        .page-element-preview-dialog .dialog-title {
+            font-weight: bold;
+            padding: 0 1em;
+        }
+        
+        .page-element-preview-dialog page-element-markup-field {
+            width: 50%;
+        }
+        
+        .page-element-preview-dialog .preview-wrapper {
+            background-color: #333333;
+            overflow: hidden;
+            width: 50%;
+        }
+        
+        .page-element-preview-dialog .preview-wrapper pagebuilder-page-element-preview {
+            margin-left: auto;
+            margin-right: auto;
+            max-width: 100%;
+            width: 100%;
+        }
+        
+        .page-element-preview-dialog .preview-wrapper pagebuilder-page-element-preview.mobile {
+            max-width: 384px;
+        }
+        
+        .page-element-preview-dialog .preview-wrapper pagebuilder-page-element-preview.tablet {
+            max-width: 768px;
+        }
+        
+        .page-element-preview-dialog .preview-wrapper pagebuilder-page-element-preview.desktop {
+            max-width: 1024px;
+        }
+        
+        .page-element-preview-dialog .preview-wrapper vaadin-tabs vaadin-tab {
+            color: #999999;
+        }
+        
+        .page-element-preview-dialog .preview-wrapper vaadin-tabs vaadin-tab[selected] {
+            color: #ffffff;
+        }
+        
+        .page-element-preview-dialog .preview-wrapper vaadin-tabs vaadin-tab[selected]:before,
+        .page-element-preview-dialog .preview-wrapper vaadin-tabs vaadin-tab[selected]:after {
+            background-color: #ffffff;
+        }
+    </style>
+</custom-style>
+
+<dom-module id="page-element-preview-dialog" theme-for="vaadin-dialog-overlay">
+    <template>
+	    <style>
+			:host([theme="page-element-preview-dialog"]) [part="overlay"] {
+			    height: 640px;
+			    width: 960px;
+			}
+			
+			:host([theme="page-element-preview-dialog-fullscreen"]) [part="overlay"] {
+			    height: 100%;
+                width: 100%;
+            }
+			
+			:host([theme="page-element-preview-dialog"]) [part="content"],
+			:host([theme="page-element-preview-dialog-fullscreen"]) [part="content"] {
+			    height: 100%;
+			    padding: 0;
+			}
+	    </style>
+    </template>
+</dom-module>
