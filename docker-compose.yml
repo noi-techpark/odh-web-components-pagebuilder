@@ -3,7 +3,7 @@ services:
   app:
     build:
       context: .
-      dockerfile: docker/java.dockerfile
+      dockerfile: infrastructure/docker/Dockerfile
       target: dev
     volumes:
       - ./:/code
@@ -24,7 +24,7 @@ services:
       PAGES_DOMAIN_NAME: ${PAGES_DOMAIN_NAME}
     tty: true
     ports:
-      - "${APP_PORT}:8080"
+      - "${SERVER_PORT}:8080"
   postgres:
     image: "postgres:11-alpine"
     environment:
@@ -33,4 +33,4 @@ services:
       POSTGRES_PASSWORD: password
     tty: true
     ports:
-      - "${POSTGRES_PORT}:5432"
+      - "${MAPPED_POSTGRES_PORT}:5432"

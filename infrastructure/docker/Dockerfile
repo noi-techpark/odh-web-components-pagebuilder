@@ -21,8 +21,8 @@ RUN wget https://github.com/mozilla/geckodriver/releases/download/v0.26.0/geckod
 FROM base AS dev
 
 # Not for BASE, because we do not need maven package caches for production
-COPY docker/entrypoint-java.sh /entrypoint-java.sh
-ENTRYPOINT [ "/entrypoint-java.sh" ]
+COPY infrastructure/docker/entrypoint.sh /entrypoint.sh
+ENTRYPOINT [ "/entrypoint.sh" ]
 
 # BUILD stage #################################################################
 FROM base as build
