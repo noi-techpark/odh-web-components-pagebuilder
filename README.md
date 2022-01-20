@@ -2,6 +2,8 @@
 
 `TODO`: Description of the project.
 
+[![ci odh-web-components-pagebuilder](https://github.com/noi-techpark/odh-web-components-pagebuilder/actions/workflows/ci.yml/badge.svg)](https://github.com/noi-techpark/odh-web-components-pagebuilder/actions/workflows/ci.yml)
+
 ## Table of contents
 
 - [Getting started](#getting-started)
