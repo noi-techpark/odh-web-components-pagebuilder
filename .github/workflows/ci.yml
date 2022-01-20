@@ -16,8 +16,7 @@ on:
 
 jobs:
   build:
-    # use 18.04 to have old mvn with http support, 20.04 mvn only accepts https repos
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
 
     steps:
       - uses: actions/checkout@v2
@@ -25,7 +24,7 @@ jobs:
         uses: actions/setup-java@v2
         with:
           java-version: '8'
-          distribution: 'adopt'
+          distribution: 'temurin'
           cache: maven
 
       - name: Test with Maven
