@@ -38,7 +38,7 @@ public class ChromeWebDriverScreenshotRenderer extends WebDriverScreenshotRender
 	protected RemoteWebDriver createDriver() {
 		ChromeOptions options = new ChromeOptions();
 		options.addArguments("--headless");
-		options.addArguments("--window-size=1280,960");
+		options.addArguments("--window-size=1280,2560");
 		options.addArguments("--hide-scrollbars");
 		options.addArguments("--ignore-certificate-errors");
 		options.addArguments("--whitelisted-ips");

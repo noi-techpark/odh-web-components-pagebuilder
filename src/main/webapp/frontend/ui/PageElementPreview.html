@@ -1,0 +1,75 @@
+<dom-module id="pagebuilder-page-element-preview">
+    <template>
+		<style>
+		    :host {
+		        background-color: #333333;
+		        box-sizing: border-box;
+		    }
+		     
+			iframe {
+				border: 0;
+				height: 100%;
+				overflow: auto;
+				width: 100%;
+			}
+		</style>
+		<iframe id="frame" frameborder="0" src="/frontend/pages/PageElementPreview.html"></iframe>
+	</template>
+	<script>
+        class PageElementPreview extends Polymer.Element {
+        	
+            static get is() {
+                return 'pagebuilder-page-element-preview';
+            }
+            
+            setup(assets) {
+                var frame = this.shadowRoot.querySelector('iframe');
+                var document = frame.contentWindow.document;
+                
+                function doSetup() {
+                	[].forEach.call(document.head.querySelectorAll('script'), function(s) {
+                        s.parentNode.removeChild(s);
+                    });
+
+                    if (!!assets) {
+                        for (var i in assets) {
+                            var s = document.createElement('script');
+                            s.src = assets[i];
+                            s.async = true;
+                            
+                            document.head.appendChild(s);
+                        }
+                    }
+                }
+                
+                if (!!document.head) {
+                	doSetup();
+                } else {
+                	frame.onload = function() {
+                		doSetup();
+                	};
+                }
+            }
+            
+            update(markup) {
+            	var frame = this.shadowRoot.querySelector('iframe');
+                var document = frame.contentWindow.document;
+            	
+                function doUpdate() {
+                	document.body.innerHTML = markup;
+                }
+                
+                if (!!document.body) {
+                	doUpdate();
+                } else {
+                    frame.onload = function() {
+                        doUpdate();
+                    };
+                }
+            }
+            
+        }
+
+        customElements.define(PageElementPreview.is, PageElementPreview);
+    </script>
+</dom-module>

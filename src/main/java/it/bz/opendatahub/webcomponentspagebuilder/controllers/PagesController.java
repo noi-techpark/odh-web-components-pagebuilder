@@ -48,7 +48,7 @@ public class PagesController {
 
 		if (pageVersion.isPresent()) {
 			try {
-				String html = pageRenderer.renderPage(pageVersion.get());
+				String html = pageRenderer.renderPreview(pageVersion.get());
 
 				html = html
 						.replaceAll("</head>",
@@ -110,7 +110,7 @@ public class PagesController {
 
 		if (pageVersion.isPresent()) {
 			try {
-				return ResponseEntity.ok(pageRenderer.renderPage(pageVersion.get()));
+				return ResponseEntity.ok(pageRenderer.renderPreview(pageVersion.get()));
 			} catch (IOException | TemplateException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();

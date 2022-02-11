@@ -1,6 +1,8 @@
 package it.bz.opendatahub.webcomponentspagebuilder.data.entities;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
@@ -15,7 +17,11 @@ import javax.persistence.OneToOne;
 import javax.persistence.Table;
 import javax.validation.constraints.NotNull;
 
+import org.hibernate.annotations.Type;
+import org.hibernate.annotations.TypeDef;
 import org.springframework.data.jpa.convert.threeten.Jsr310JpaConverters;
+
+import com.vladmihalcea.hibernate.type.json.JsonBinaryType;
 
 /**
  * Entity for the definition of the publication of a page (actually a specific
@@ -25,21 +31,23 @@ import org.springframework.data.jpa.convert.threeten.Jsr310JpaConverters;
  */
 @Entity
 @Table(name = "pagebuilder_page_publication")
+@TypeDef(name = "jsonb", typeClass = JsonBinaryType.class)
 public class PagePublication extends BaseEntity {
 
-	@ManyToOne(fetch = FetchType.EAGER)
+	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "page_id")
+	@NotNull
 	private Page page;
 
-	@Column(name = "domain_name")
+	@OneToOne(fetch = FetchType.LAZY, cascade = { CascadeType.REFRESH })
+	@JoinColumn(name = "version_id")
 	@NotNull
-	private String domainName;
+	private PageVersion version;
 
-	@Column(name = "subdomain_name")
-	private String subdomainName;
-
-	@Column(name = "path_name")
-	private String pathName;
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "site_id")
+	@NotNull
+	private Site site;
 
 	@Column(name = "action")
 	@Enumerated(EnumType.STRING)
@@ -51,15 +59,15 @@ public class PagePublication extends BaseEntity {
 	@NotNull
 	private PagePublicationStatus status;
 
-	@Column(name = "deployed_datetime")
+	@Column(name = "updated_at")
 	@Convert(converter = Jsr310JpaConverters.LocalDateTimeConverter.class)
 	@NotNull
-	private LocalDateTime deployedAt;
+	private LocalDateTime updatedAt;
 
-	@OneToOne(fetch = FetchType.EAGER, cascade = { CascadeType.REFRESH })
-	@JoinColumn(name = "version_id")
+	@Column(name = "logs")
+	@Type(type = "jsonb")
 	@NotNull
-	private PageVersion version;
+	private List<PagePublicationLog> logs = new ArrayList<>();
 
 	public PagePublication() {
 
@@ -73,36 +81,24 @@ public class PagePublication extends BaseEntity {
 		this.page = page;
 	}
 
-	public String getDomainName() {
-		return domainName;
-	}
-
-	public void setDomainName(String domainName) {
-		this.domainName = domainName;
-	}
-
-	public String getSubdomainName() {
-		return subdomainName;
-	}
-
-	public void setSubdomainName(String subdomainName) {
-		this.subdomainName = subdomainName;
-	}
-
-	public String getPathName() {
-		return pathName;
-	}
-
-	public void setPathName(String pathName) {
-		this.pathName = pathName;
-	}
-
 	public PageVersion getVersion() {
 		return version;
 	}
 
 	public void setVersion(PageVersion version) {
 		this.version = version;
+	}
+
+	public Site getSite() {
+		return site;
+	}
+
+	public boolean hasSite() {
+		return site != null;
+	}
+
+	public void setSite(Site site) {
+		this.site = site;
 	}
 
 	public PagePublicationAction getAction() {
@@ -121,40 +117,36 @@ public class PagePublication extends BaseEntity {
 		this.status = status;
 	}
 
-	public LocalDateTime getDeployedAt() {
-		return deployedAt;
+	public LocalDateTime getUpdatedAt() {
+		return updatedAt;
 	}
 
-	public void setDeployedAt(LocalDateTime deployedAt) {
-		this.deployedAt = deployedAt;
+	public void setUpdatedAt(LocalDateTime updatedAt) {
+		this.updatedAt = updatedAt;
 	}
 
-	public String getUri() {
-		String hostName = getDomainName();
-
-		if (getSubdomainName() != null && !getSubdomainName().equals("")) {
-			hostName = String.format("%s.%s", getSubdomainName(), getDomainName());
-		}
-
-		if (getPathName() != null && !getPathName().equals("")) {
-			return String.format("%s/%s", hostName, getPathName());
-		}
-
-		return hostName;
+	public List<PagePublicationLog> getLogs() {
+		return logs;
 	}
 
-	public PagePublication copy() {
-		PagePublication copy = new PagePublication();
-		copy.setPage(getPage());
-		copy.setVersion(getVersion());
-		copy.setDomainName(getDomainName());
-		copy.setSubdomainName(getSubdomainName());
-		copy.setPathName(getPathName());
-		copy.setAction(getAction());
-		copy.setStatus(getStatus());
-		copy.setDeployedAt(getDeployedAt());
+	public void setLogs(List<PagePublicationLog> logs) {
+		this.logs = logs;
+	}
 
-		return copy;
+	public void add(PagePublicationLog entry) {
+		getLogs().add(entry);
+	}
+
+	public boolean isPending() {
+		return status != null && status.equals(PagePublicationStatus.PENDING);
+	}
+
+	public boolean isProgressing() {
+		return status != null && status.equals(PagePublicationStatus.PROGRESSING);
+	}
+
+	public boolean isCompleted() {
+		return status != null && status.equals(PagePublicationStatus.COMPLETED);
 	}
 
 }

@@ -32,7 +32,6 @@ import it.bz.opendatahub.webcomponentspagebuilder.data.PageComponentsProvider;
 import it.bz.opendatahub.webcomponentspagebuilder.data.UsersProvider;
 import it.bz.opendatahub.webcomponentspagebuilder.data.WebComponentsStorePageComponentsProvider;
 import it.bz.opendatahub.webcomponentspagebuilder.deployment.AwsBasedDeploymentPipeline;
-import it.bz.opendatahub.webcomponentspagebuilder.rendering.screenshots.ChromeWebDriverScreenshotRenderer;
 import it.bz.opendatahub.webcomponentspagebuilder.rendering.screenshots.GeckoWebDriverScreenshotRenderer;
 import it.bz.opendatahub.webcomponentspagebuilder.rendering.screenshots.ScreenshotRenderer;
 
@@ -57,9 +56,6 @@ public class ApplicationConfiguration {
 	@Value("${application.database.password:#{null}}")
 	private String databasePassword;
 
-	@Value("${application.aws.region:#{null}}")
-	private String awsRegionName;
-
 	@Value("${application.aws.access-key:#{null}}")
 	private String awsAccessKey;
 
@@ -77,6 +73,9 @@ public class ApplicationConfiguration {
 
 	@Value("${application.pages.domain-name:#{null}}")
 	private String pagesDomainName;
+
+	@Value("${application.pages.zone-name:#{null}}")
+	private String pagesZoneName;
 
 	@Value("${application.pages.allow-subdomains:#{true}}")
 	private Boolean pagesSubdomainsAllowed;
@@ -135,8 +134,8 @@ public class ApplicationConfiguration {
 	public DomainsProvider domainsProvider() {
 		DefaultDomainsProvider provider = new DefaultDomainsProvider();
 
-		provider.add(pagesDomainName, pagesSubdomainsAllowed,
-				new AwsBasedDeploymentPipeline(awsRegionName, awsAccessKey, awsAccessSecret));
+		provider.add(pagesDomainName, pagesSubdomainsAllowed, new AwsBasedDeploymentPipeline()
+				.withCredentials(awsAccessKey, awsAccessSecret).withZoneName(pagesZoneName));
 
 		return provider;
 	}
@@ -172,7 +171,6 @@ public class ApplicationConfiguration {
 	@Bean
 	@Lazy
 	public ScreenshotRenderer screenshotRenderer() {
-		//return new ChromeWebDriverScreenshotRenderer("/usr/bin/chromedriver", "/usr/bin/chromium");
 		return new GeckoWebDriverScreenshotRenderer("/usr/bin/geckodriver", "/usr/bin/firefox");
 	}
 

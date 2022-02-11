@@ -41,7 +41,7 @@ public class PageComponentCard extends Card {
 		this.component = component;
 
 		addClassName("page-component-card");
-		setWidth("360px");
+		setWidth("425px");
 
 		ObjectMapper objectMapper = new ObjectMapper();
 

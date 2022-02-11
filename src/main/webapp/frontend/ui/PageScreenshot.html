@@ -2,24 +2,60 @@
     <template>
 		<style>
 		    :host {
+		        cursor: pointer;
 		        width: 100%;
+		    }
+		    
+		    #root {
+		        overflow: hidden;
+		        position: relative;
+		    }
+		    
+		    #root.contains-image {
+		        box-shadow: 0 0 8px rgba(0, 0, 0, 0.2);
+		    }
+		    
+		    #root:after {
+		        content: '';
+		        display: block;
+		        padding-bottom: 140%;
+		    }
+		    
+		    #image, #contains-message {
+		        bottom: 0;
+                left: 0;
+                position: absolute;
+                right: 0;
+                top: 0;
 		    }
 		
 			#image {
 				display: none;
-				max-width: 100%;
+				width: 100%;
+			}
+			
+			#contains-message {
+			    box-sizing: border-box;
+                border: 8px dashed #dedede;
 			}
 			
 			#message {
 			    box-sizing: border-box;
-			    border: 8px dashed #cccccc;
-				display: block;
-			    padding: 6em 2em;
+			    font-weight: 0.9em;
+			    padding: 1em;
+			    position: absolute;
 			    text-align: center;
+                top: 50%;
+                transform: translateY(-50%);
+                width: 100%;
 			}
 		</style>
-	    <img id="image" />
-	    <div id="message"></div>
+		<div id="root">
+		    <img id="image"/>
+		    <div id="contains-message">
+		        <div id="message"></div>
+		    </div>
+		</div>
     </template>
     <script>
         class PageScreenshot extends Polymer.Element {
@@ -30,18 +66,28 @@
             load(url) {
             	var self = this;
             	
+            	var root = this.shadowRoot.getElementById('root');
             	var image = this.shadowRoot.getElementById('image');
+            	var messageContainer = this.shadowRoot.getElementById('contains-message');
             	var message = this.shadowRoot.getElementById('message');
                 var urlCreator = window.URL || window.webkitURL;
                 
+                messageContainer.style.display = 'block';
                 message.textContent = 'Preview is being generated...';
+                
+                image.addEventListener('click', function() {
+                	self.$server.clicked();
+                }, false);
                 
                 fetch(url).then(function(response) {
                     if (response.status === 200) {
                     	response.blob().then(function(data) {
-                            message.style.display = 'none';
+                    	    messageContainer.style.display = 'none';
+                    	    
                             image.style.display = 'block';
                             image.src = urlCreator.createObjectURL(data);
+                            
+                            root.classList.add('contains-image');
                         });
                     } else {
                         message.textContent = 'Page preview not available.';

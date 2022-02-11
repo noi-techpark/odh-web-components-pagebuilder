@@ -1,5 +1,7 @@
 package it.bz.opendatahub.webcomponentspagebuilder.ui.views;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -18,8 +20,12 @@ import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.dependency.HtmlImport;
+import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.html.H2;
+import com.vaadin.flow.component.icon.Icon;
+import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
@@ -31,18 +37,20 @@ import com.vaadin.flow.router.Route;
 import it.bz.opendatahub.webcomponentspagebuilder.data.entities.Page;
 import it.bz.opendatahub.webcomponentspagebuilder.data.entities.PageContent;
 import it.bz.opendatahub.webcomponentspagebuilder.data.entities.PagePublication;
-import it.bz.opendatahub.webcomponentspagebuilder.data.entities.PagePublicationStatus;
 import it.bz.opendatahub.webcomponentspagebuilder.data.entities.PageVersion;
 import it.bz.opendatahub.webcomponentspagebuilder.data.repositories.PagePublicationRepository;
 import it.bz.opendatahub.webcomponentspagebuilder.data.repositories.PageRepository;
 import it.bz.opendatahub.webcomponentspagebuilder.events.PagePublicationUpdated;
+import it.bz.opendatahub.webcomponentspagebuilder.events.PageVersionDeployedEvent;
 import it.bz.opendatahub.webcomponentspagebuilder.events.PageVersionRemovedEvent;
+import it.bz.opendatahub.webcomponentspagebuilder.events.PageVersionUndeployedEvent;
 import it.bz.opendatahub.webcomponentspagebuilder.rendering.PageRenderer;
 import it.bz.opendatahub.webcomponentspagebuilder.ui.MainLayout;
 import it.bz.opendatahub.webcomponentspagebuilder.ui.components.PageScreenshot;
 import it.bz.opendatahub.webcomponentspagebuilder.ui.controllers.PublishingController;
 import it.bz.opendatahub.webcomponentspagebuilder.ui.dialogs.DuplicatePageDialog;
 import it.bz.opendatahub.webcomponentspagebuilder.ui.dialogs.DuplicatePageDialog.PageToDuplicate;
+import it.bz.opendatahub.webcomponentspagebuilder.ui.dialogs.MonitorPagePublicationDialog;
 
 /**
  * View for managing the versions of a single page, allowing therefore to
@@ -58,99 +66,136 @@ public class ManagePageView extends VerticalLayout implements HasUrlParameter<St
 
 	public static final String ROUTE = "pages/manage";
 
+	private class ActionsDialog extends Dialog {
+
+		private static final long serialVersionUID = -6630088402796781147L;
+
+		private VerticalLayout contents;
+
+		public ActionsDialog() {
+			setWidth("320px");
+
+			contents = new VerticalLayout();
+			contents.setMargin(false);
+
+			add(contents);
+		}
+
+		public ActionsDialog withSection(String title, Button... buttons) {
+			return withSection(title, null, buttons);
+		}
+
+		public ActionsDialog withSection(String title, String text, Button... buttons) {
+			Div titleComponent = new Div();
+			titleComponent.setText(title);
+
+			Div textComponent = new Div();
+			textComponent.setVisible(false);
+
+			if (text != null) {
+				textComponent.setText(text);
+				textComponent.setVisible(true);
+			}
+
+			contents.add(titleComponent);
+			contents.add(textComponent);
+			contents.add(new HorizontalLayout(buttons));
+
+			return this;
+		}
+
+		@SuppressWarnings("unused")
+		public void addSection(String title, Button... buttons) {
+			withSection(title, buttons);
+		}
+
+		@SuppressWarnings("unused")
+		public void addSection(String title, String text, Button... buttons) {
+			withSection(title, text, buttons);
+		}
+
+	}
+
 	private class ManageDraftVersionComponent extends VerticalLayout {
 
 		private static final long serialVersionUID = -3943724466695624512L;
 
 		private VerticalLayout placeholder;
 
-		private VerticalLayout defaultPlaceholder;
-
-		private VerticalLayout archivePlaceholder;
-
 		private PageScreenshot image;
 
-		private Div details;
+		private HorizontalLayout metadata;
 
-		private HorizontalLayout actions;
+		private Div metadataDatetime;
 
-		private Button previewButton;
+		private Optional<ActionsDialog> metadataActions = Optional.empty();
 
-		private Button editButton;
-
-		private Button duplicateButton;
-
-		private Button publishButton;
-
-		private Button discardButton;
+		private Div placeholderWrapper;
 
 		public ManageDraftVersionComponent() {
 			Button createButton = new Button("CREATE DRAFT");
 			createButton.addThemeVariants(ButtonVariant.LUMO_SUCCESS);
 			createButton.addClickListener(e -> {
-				page.setDraftVersion(publishingController.createDraft(page));
-				page.addVersion(page.getDraftVersion());
+				Page freshPage = pagesRepo.getOne(page.getId());
 
-				page = pagesRepo.save(page);
+				PageVersion draftVersion = publishingController.createDraft(freshPage);
 
-				refresh();
+				freshPage.setDraftVersion(draftVersion);
+				freshPage.addVersion(draftVersion);
+
+				page = pagesRepo.save(freshPage);
+
+				onEdit();
 
 				Notification.show("Page draft created!");
 			});
-
-			defaultPlaceholder = new VerticalLayout();
-			defaultPlaceholder.add(
-					"There's currently no page draft defined. You can create one from scratch or by starting from the most recent published version.");
-			defaultPlaceholder.add(createButton);
-
-			archivePlaceholder = new VerticalLayout();
-			archivePlaceholder.add("There's no page draft defined.");
 
 			placeholder = new VerticalLayout();
 			placeholder.addClassName("placeholder-contents");
 			placeholder.setMargin(false);
 			placeholder.setPadding(false);
 			placeholder.setSpacing(false);
-			placeholder.add(defaultPlaceholder);
-			placeholder.add(archivePlaceholder);
+			placeholder.setWidth(null);
+			placeholder.add("No page draft defined, create one from scratch or based on the current version.");
+			placeholder.add(createButton);
 
 			image = new PageScreenshot();
+			image.setClickHandler(() -> onPreview());
 
-			details = new Div();
+			metadataDatetime = new Div();
+			metadataDatetime.setText(LocalDateTime.now().toString());
 
-			previewButton = new Button("PREVIEW");
-			previewButton.addClickListener(e -> onPreview());
-
-			editButton = new Button("EDIT");
+			Button editButton = new Button();
+			editButton.addThemeVariants(ButtonVariant.LUMO_ICON, ButtonVariant.LUMO_PRIMARY);
+			editButton.setIcon(VaadinIcon.EDIT.create());
 			editButton.addClickListener(e -> onEdit());
 
-			duplicateButton = new Button("DUPLICATE");
-			duplicateButton.addThemeVariants(ButtonVariant.LUMO_SUCCESS);
-			duplicateButton.addClickListener(e -> onDuplicate());
+			Button actionsButton = new Button();
+			actionsButton.addThemeVariants(ButtonVariant.LUMO_ICON);
+			actionsButton.setIcon(VaadinIcon.ELLIPSIS_DOTS_H.create());
+			actionsButton.addClickListener(e -> onActions());
 
-			publishButton = new Button("PUBLISH");
-			publishButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-			publishButton.addClickListener(e -> onPublish());
+			metadata = new HorizontalLayout();
+			metadata.setDefaultVerticalComponentAlignment(Alignment.CENTER);
+			metadata.setWidthFull();
+			metadata.add(metadataDatetime, new HorizontalLayout(editButton, actionsButton));
+			metadata.expand(metadataDatetime);
 
-			discardButton = new Button("DISCARD");
-			discardButton.addThemeVariants(ButtonVariant.LUMO_ERROR);
-			discardButton.addClickListener(e -> onDiscard());
+			placeholderWrapper = new Div();
+			placeholderWrapper.addClassName("placeholder-wrapper");
+			placeholderWrapper.add(placeholder);
 
-			actions = new HorizontalLayout();
-			actions.add(previewButton);
-			actions.add(editButton);
-			actions.add(duplicateButton);
-			actions.add(publishButton);
-			actions.add(discardButton);
-
-			add(placeholder);
+			add(new H2("Draft"));
+			add(placeholderWrapper);
 			add(image);
-			add(details);
-			add(actions);
+			add(metadata);
 
 			setMargin(false);
 			setPadding(true);
-			setWidth("640px");
+		}
+
+		private void onActions() {
+			metadataActions.ifPresent(dialog -> dialog.open());
 		}
 
 		private PageVersion getPageVersion() {
@@ -158,15 +203,21 @@ public class ManagePageView extends VerticalLayout implements HasUrlParameter<St
 		}
 
 		private void onPreview() {
+			metadataActions.ifPresent(dialog -> dialog.close());
+
 			UI.getCurrent().getPage().executeJavaScript(
 					String.format("window.open('/pages/preview/%s', '_blank');", getPageVersion().getHash()));
 		}
 
 		private void onEdit() {
+			metadataActions.ifPresent(dialog -> dialog.close());
+
 			getUI().ifPresent(ui -> ui.navigate(EditPageVersionView.class, getPageVersion().getIdAsString()));
 		}
 
 		private void onDuplicate() {
+			metadataActions.ifPresent(dialog -> dialog.close());
+
 			DuplicatePageDialog dialog = applicationContext.getBean(DuplicatePageDialog.class);
 
 			dialog.setBean(new PageToDuplicate(getPageVersion()));
@@ -181,14 +232,22 @@ public class ManagePageView extends VerticalLayout implements HasUrlParameter<St
 		}
 
 		private void onPublish() {
-			publishingController.publish(getPageVersion(), (updatedPage, updatedPageVersion) -> {
-				page = updatedPage;
+			metadataActions.ifPresent(dialog -> dialog.close());
 
-				refresh();
-			});
+			if (publishingController.isLocked(page)) {
+				new PageLockedDialog().open();
+			} else {
+				publishingController.publish(getPageVersion(), (updatedPage, updatedPageVersion) -> {
+					page = updatedPage;
+
+					refresh();
+				});
+			}
 		}
 
 		private void onDiscard() {
+			metadataActions.ifPresent(dialog -> dialog.close());
+
 			PageVersion pageVersion = getPageVersion();
 
 			publishingController.discard(pageVersion, (updatedPage) -> {
@@ -196,7 +255,9 @@ public class ManagePageView extends VerticalLayout implements HasUrlParameter<St
 
 				refresh();
 
-				eventPublisher.publishEvent(new PageVersionRemovedEvent(pageVersion));
+				new Thread(() -> {
+					eventPublisher.publishEvent(new PageVersionRemovedEvent(pageVersion));
+				}).start();
 			});
 		}
 
@@ -204,191 +265,150 @@ public class ManagePageView extends VerticalLayout implements HasUrlParameter<St
 			if (getPageVersion() != null) {
 				removeClassName("is-version-placeholder");
 
-				placeholder.setVisible(false);
+				placeholderWrapper.setVisible(false);
 
 				image.setVisible(true);
-				details.setVisible(true);
-				actions.setVisible(true);
-
-				editButton.setVisible(!page.getArchived());
-				publishButton.setVisible(!page.getArchived());
-				discardButton.setVisible(!page.getArchived());
 
 				image.setSrc(String.format("/pages/preview/%s.png?%s", getPageVersion().getIdAsString(),
 						DigestUtils.md5Hex(StringUtils
 								.join(getPageVersion().getContents().stream().filter(content -> content != null)
 										.map(PageContent::getMarkup).collect(Collectors.toList())))));
+
+				metadata.setVisible(true);
+
+				metadataDatetime.setText(
+						DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss").format(getPageVersion().getUpdatedAt()));
+
+				Button editButton = new Button("EDIT");
+				editButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+				editButton.addClickListener(e -> onEdit());
+
+				Button publishButton = new Button("PUBLISH");
+				publishButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+				publishButton.addClickListener(e -> onPublish());
+
+				Button discardButton = new Button("DISCARD");
+				discardButton.addThemeVariants(ButtonVariant.LUMO_ERROR);
+				discardButton.addClickListener(e -> onDiscard());
+
+				Button previewButton = new Button("PREVIEW");
+				previewButton.addClickListener(e -> onPreview());
+
+				Button duplicateButton = new Button("DUPLICATE");
+				duplicateButton.addThemeVariants(ButtonVariant.LUMO_SUCCESS);
+				duplicateButton.addClickListener(e -> onDuplicate());
+
+				metadataActions = Optional.of(new ActionsDialog().withSection("Contents", editButton, previewButton)
+						.withSection("Publishing", publishButton, discardButton).withSection("Other", duplicateButton));
 			} else {
 				addClassName("is-version-placeholder");
 
-				placeholder.setVisible(true);
-				defaultPlaceholder.setVisible(!page.getArchived());
-				archivePlaceholder.setVisible(page.getArchived());
-
+				placeholderWrapper.setVisible(true);
 				image.setVisible(false);
-				details.setVisible(false);
-				actions.setVisible(false);
+				metadata.setVisible(false);
+
+				metadataActions = Optional.empty();
 			}
 		}
 
 	}
 
-	private class ManagePublicVersionComponent extends VerticalLayout {
+	private class ManageCurrentVersionComponent extends VerticalLayout {
 
 		private static final long serialVersionUID = -2059652706299048346L;
 
 		private VerticalLayout placeholder;
 
-		private Button previewButton;
-
-		private Button visitButton;
-
-		private Button unpublishButton;
-
-		private Button duplicateButton;
-
 		private PageScreenshot image;
 
-		private VerticalLayout task;
+		private HorizontalLayout metadata;
 
-		private HorizontalLayout actions;
+		private Optional<ActionsDialog> metadataActions = Optional.empty();
 
-		private HorizontalLayout pendingTask;
+		private Div metadataComments;
 
-		private HorizontalLayout progressingTask;
+		private Div metadataDatetime;
 
-		private HorizontalLayout completedTask;
+		private Div placeholderWrapper;
 
-		public ManagePublicVersionComponent() {
+		public ManageCurrentVersionComponent() {
 			placeholder = new VerticalLayout();
 			placeholder.addClassName("placeholder-contents");
 			placeholder.setMargin(false);
 			placeholder.setPadding(false);
 			placeholder.setSpacing(false);
-			placeholder.add("There's no current public version for this page.");
+			placeholder.setWidth(null);
+			placeholder.add("There's no current version for this page.");
 
 			image = new PageScreenshot();
+			image.setClickHandler(() -> onPreview());
 
-			Div pendingTaskStatus = new Div();
-			pendingTaskStatus.addClassName("task-status");
-			pendingTaskStatus.setText("PENDING");
+			metadataDatetime = new Div();
+			metadataDatetime.setText(LocalDateTime.now().toString());
 
-			Div pendingTaskStatusWrapper = new Div(pendingTaskStatus);
-			pendingTaskStatusWrapper.addClassName("contains-task-status");
-			pendingTaskStatusWrapper.setWidth("160px");
+			Button actionsButton = new Button();
+			actionsButton.addThemeVariants(ButtonVariant.LUMO_ICON);
+			actionsButton.setIcon(VaadinIcon.ELLIPSIS_DOTS_H.create());
+			actionsButton.addClickListener(e -> onActions());
 
-			Button dismissPendingButton = new Button();
-			dismissPendingButton.addClickListener(e -> onDismissPending());
-			dismissPendingButton.addThemeVariants(ButtonVariant.LUMO_SMALL, ButtonVariant.LUMO_ERROR);
-			dismissPendingButton.setText("Abort");
+			metadata = new HorizontalLayout();
+			metadata.setDefaultVerticalComponentAlignment(Alignment.CENTER);
+			metadata.setWidthFull();
+			metadata.add(metadataDatetime, actionsButton);
+			metadata.expand(metadataDatetime);
 
-			VerticalLayout pendingTaskContents = new VerticalLayout();
-			pendingTaskContents.setMargin(false);
-			pendingTaskContents.setPadding(false);
-			pendingTaskContents.setSpacing(false);
-			pendingTaskContents.setWidthFull();
-			pendingTaskContents.add("The deployment will be processed shortly, please wait...");
-			pendingTaskContents.add(dismissPendingButton);
+			metadataComments = new Div();
 
-			pendingTask = new HorizontalLayout();
-			pendingTask.addClassName("task");
-			pendingTask.addClassName("is-pending");
-			pendingTask.setWidthFull();
-			pendingTask.add(pendingTaskStatusWrapper);
-			pendingTask.add(pendingTaskContents);
+			placeholderWrapper = new Div();
+			placeholderWrapper.addClassName("placeholder-wrapper");
+			placeholderWrapper.add(placeholder);
 
-			Div progressingTaskStatus = new Div();
-			progressingTaskStatus.addClassName("task-status");
-			progressingTaskStatus.setText("IN PROGRESS");
-
-			Div progressingTaskStatusWrapper = new Div(progressingTaskStatus);
-			progressingTaskStatusWrapper.addClassName("contains-task-status");
-			progressingTaskStatusWrapper.setWidth("160px");
-
-			progressingTask = new HorizontalLayout();
-			progressingTask.addClassName("task");
-			progressingTask.addClassName("is-progressing");
-			progressingTask.setWidthFull();
-			progressingTask.add(progressingTaskStatusWrapper);
-			progressingTask.add("The page version is currently being deployed...");
-
-			Div completedTaskStatus = new Div();
-			completedTaskStatus.addClassName("task-status");
-			completedTaskStatus.setText("DONE");
-
-			Div completedTaskStatusWrapper = new Div(completedTaskStatus);
-			completedTaskStatusWrapper.addClassName("contains-task-status");
-			completedTaskStatusWrapper.setWidth("160px");
-
-			completedTask = new HorizontalLayout();
-			completedTask.addClassName("task");
-			completedTask.addClassName("is-completed");
-			completedTask.setWidthFull();
-			completedTask.add(completedTaskStatusWrapper);
-			completedTask.add("Public version has been deployed.");
-
-			task = new VerticalLayout(pendingTask, progressingTask, completedTask);
-			task.setMargin(false);
-			task.setPadding(false);
-			task.setSpacing(true);
-
-			previewButton = new Button("PREVIEW");
-			previewButton.addClickListener(e -> onPreview());
-
-			visitButton = new Button("VISIT");
-			visitButton.addClickListener(e -> onVisit());
-
-			unpublishButton = new Button("UNPUBLISH");
-			unpublishButton.addThemeVariants(ButtonVariant.LUMO_ERROR);
-			unpublishButton.addClickListener(e -> onUnpublish());
-
-			duplicateButton = new Button("DUPLICATE");
-			duplicateButton.addThemeVariants(ButtonVariant.LUMO_SUCCESS);
-			duplicateButton.addClickListener(e -> onDuplicate());
-
-			actions = new HorizontalLayout();
-			actions.add(previewButton);
-			actions.add(visitButton);
-			actions.add(unpublishButton);
-			actions.add(duplicateButton);
-
-			add(placeholder);
+			add(new H2("Current"));
+			add(placeholderWrapper);
 			add(image);
-			// TODO add datetime label
-			add(task);
-			add(actions);
+			add(metadata);
+			add(metadataComments);
 
 			setMargin(false);
 			setPadding(true);
-			setWidth("640px");
 		}
 
-		private void onDismissPending() {
-			// TODO Auto-generated method stub
-			Notification.show("Noy yet implemented!");
+		private PageVersion getPageVersion() {
+			return page.getPublicVersion();
+		}
+
+		private void onActions() {
+			metadataActions.ifPresent(actions -> actions.open());
 		}
 
 		private void onPreview() {
+			metadataActions.ifPresent(dialog -> dialog.close());
+
 			UI.getCurrent().getPage().executeJavaScript(
 					String.format("window.open('/pages/preview/%s', '_blank');", getPageVersion().getHash()));
 		}
 
-		private void onVisit() {
-			UI.getCurrent().getPage().executeJavaScript(
-					String.format("window.open('https://%s', '_blank');", page.getPublication().getUri()));
-		}
+		private void onPublish() {
+			metadataActions.ifPresent(dialog -> dialog.close());
 
-		private void onUnpublish() {
-			publishingController.unpublish(getPageVersion(), (updatedPage) -> {
-				page = updatedPage;
+			if (publishingController.isLocked(page)) {
+				new PageLockedDialog().open();
+			} else {
+				publishingController.deploy(getPageVersion(), (updatedPage) -> {
+					page = updatedPage;
 
-				refresh();
+					refresh();
 
-				eventPublisher.publishEvent(new PageVersionRemovedEvent(getPageVersion()));
-			});
+					new Thread(() -> {
+						eventPublisher.publishEvent(new PageVersionDeployedEvent(getPageVersion()));
+					}).start();
+				});
+			}
 		}
 
 		private void onDuplicate() {
+			metadataActions.ifPresent(dialog -> dialog.close());
+
 			DuplicatePageDialog dialog = applicationContext.getBean(DuplicatePageDialog.class);
 
 			dialog.setBean(new PageToDuplicate(getPageVersion()));
@@ -402,43 +422,253 @@ public class ManagePageView extends VerticalLayout implements HasUrlParameter<St
 			dialog.open();
 		}
 
-		private PageVersion getPageVersion() {
-			return page.getPublicVersion();
-		}
-
 		public void bind(Page page) {
-			if (getPageVersion() != null) {
+			PageVersion publicVersion = getPageVersion();
+
+			if (publicVersion != null) {
 				removeClassName("is-version-placeholder");
 
-				placeholder.setVisible(false);
+				placeholderWrapper.setVisible(false);
+
 				image.setVisible(true);
-				task.setVisible(true);
-				actions.setVisible(true);
 
 				image.setSrc(String.format("/pages/preview/%s.png?%s", getPageVersion().getIdAsString(),
 						DigestUtils.md5Hex(StringUtils
 								.join(getPageVersion().getContents().stream().filter(content -> content != null)
 										.map(PageContent::getMarkup).collect(Collectors.toList())))));
 
-				PagePublication publication = page.getPublication();
-				if (publication != null) {
-					visitButton.setVisible(publication.getStatus().equals(PagePublicationStatus.COMPLETED));
-					unpublishButton.setVisible(publication.getStatus().equals(PagePublicationStatus.COMPLETED));
+				metadata.setVisible(true);
 
-					pendingTask.setVisible(publication.getStatus().equals(PagePublicationStatus.PENDING));
-					progressingTask.setVisible(publication.getStatus().equals(PagePublicationStatus.PROGRESSING));
-					completedTask.setVisible(publication.getStatus().equals(PagePublicationStatus.COMPLETED));
+				metadataDatetime.setText(
+						DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss").format(getPageVersion().getUpdatedAt()));
+
+				if (!StringUtils.isEmpty(publicVersion.getComment())) {
+					metadataComments.setText(publicVersion.getComment());
+					metadataComments.setVisible(true);
 				} else {
-					visitButton.setVisible(false);
-					unpublishButton.setVisible(false);
+					metadataComments.setVisible(false);
 				}
+
+				Button previewButton = new Button("PREVIEW");
+				previewButton.addClickListener(e -> onPreview());
+
+				Button publishButton = new Button();
+				publishButton.addThemeVariants(ButtonVariant.LUMO_SUCCESS);
+				publishButton.setText("PUBLISH");
+				publishButton.addClickListener(e -> onPublish());
+
+				Button duplicateButton = new Button("DUPLICATE");
+				duplicateButton.addThemeVariants(ButtonVariant.LUMO_SUCCESS);
+				duplicateButton.addClickListener(e -> onDuplicate());
+
+				metadataActions = Optional.of(new ActionsDialog().withSection("Contents", previewButton)
+						.withSection("Publishing", publishButton).withSection("Other", duplicateButton));
 			} else {
 				addClassName("is-version-placeholder");
 
-				placeholder.setVisible(true);
+				placeholderWrapper.setVisible(true);
 				image.setVisible(false);
-				task.setVisible(false);
-				actions.setVisible(false);
+				metadata.setVisible(false);
+
+				metadataActions = Optional.empty();
+			}
+		}
+
+	}
+
+	private class ManagePublicVersionComponent extends VerticalLayout {
+
+		private static final long serialVersionUID = 6714407780134549078L;
+
+		private VerticalLayout undeployedStatus;
+
+		private VerticalLayout pendingStatus;
+
+		private VerticalLayout progressingStatus;
+
+		private Div progressPercentage;
+
+		private VerticalLayout completedStatus;
+
+		private VerticalLayout disconnectedStatus;
+
+		public ManagePublicVersionComponent() {
+			Button abortButton = new Button();
+			abortButton.addClickListener(e -> onAbort());
+			abortButton.addThemeVariants(ButtonVariant.LUMO_ERROR);
+			abortButton.setText("ABORT");
+
+			Button infosButton = new Button();
+			infosButton.addClickListener(e -> onMoreDetails());
+			infosButton.setText("MORE DETAILS");
+
+			Button visitButton = new Button();
+			visitButton.addClickListener(e -> onVisit());
+			visitButton.setText("VISIT");
+
+			Button unpublishButton = new Button();
+			unpublishButton.addClickListener(e -> onUnpublish());
+			unpublishButton.addThemeVariants(ButtonVariant.LUMO_ERROR);
+			unpublishButton.setText("UNPUBLISH");
+
+			Icon disconnectedStatusIcon = VaadinIcon.PLUG.create();
+			disconnectedStatusIcon.addClassName("icon");
+
+			disconnectedStatus = new VerticalLayout();
+			disconnectedStatus.addClassName("contains-status");
+			disconnectedStatus.addClassName("contains-disconnected-status");
+			disconnectedStatus.setDefaultHorizontalComponentAlignment(Alignment.CENTER);
+			disconnectedStatus.setMargin(false);
+			disconnectedStatus.setPadding(false);
+			disconnectedStatus.add(disconnectedStatusIcon);
+			disconnectedStatus.add("No site connected to this page.");
+
+			Icon undeployedStatusIcon = VaadinIcon.CLOUD_O.create();
+			undeployedStatusIcon.addClassName("icon");
+
+			undeployedStatus = new VerticalLayout();
+			undeployedStatus.addClassName("contains-status");
+			undeployedStatus.addClassName("contains-undeployed-status");
+			undeployedStatus.setDefaultHorizontalComponentAlignment(Alignment.CENTER);
+			undeployedStatus.setMargin(false);
+			undeployedStatus.setPadding(false);
+			undeployedStatus.add(undeployedStatusIcon);
+			undeployedStatus.add("No page version is currently published.");
+
+			Icon pendingStatusIcon = VaadinIcon.HOURGLASS.create();
+			pendingStatusIcon.addClassName("icon");
+
+			pendingStatus = new VerticalLayout();
+			pendingStatus.addClassName("contains-status");
+			pendingStatus.addClassName("contains-pending-status");
+			pendingStatus.setDefaultHorizontalComponentAlignment(Alignment.CENTER);
+			pendingStatus.setMargin(false);
+			pendingStatus.setPadding(false);
+			pendingStatus.add(pendingStatusIcon);
+			pendingStatus.add("The deployment will be processed shortly, please wait...");
+			pendingStatus.add(unpublishButton);
+
+			progressPercentage = new Div();
+			progressPercentage.addClassName("percentage");
+
+			progressingStatus = new VerticalLayout();
+			progressingStatus.addClassName("contains-status");
+			progressingStatus.addClassName("contains-progressing-status");
+			progressingStatus.setDefaultHorizontalComponentAlignment(Alignment.CENTER);
+			progressingStatus.setMargin(false);
+			progressingStatus.setPadding(false);
+			progressingStatus.add(progressPercentage);
+			progressingStatus.add("The page version is currently being published...");
+			progressingStatus.add(infosButton);
+
+			Icon completedStatusIcon = VaadinIcon.CHECK_CIRCLE_O.create();
+			completedStatusIcon.addClassName("icon");
+
+			completedStatus = new VerticalLayout();
+			completedStatus.addClassName("contains-status");
+			completedStatus.addClassName("contains-completed-status");
+			completedStatus.setDefaultHorizontalComponentAlignment(Alignment.CENTER);
+			completedStatus.setMargin(false);
+			completedStatus.setPadding(false);
+			completedStatus.add(completedStatusIcon);
+			completedStatus.add("Current version has been published.");
+			completedStatus.add(new HorizontalLayout(visitButton, unpublishButton));
+
+			addClassName("contains-remote-page-part");
+
+			Div statusWrappedContent = new Div();
+			statusWrappedContent.addClassName("status-wrapped-content");
+			statusWrappedContent.add(disconnectedStatus, undeployedStatus, pendingStatus, progressingStatus,
+					completedStatus);
+
+			Div statusWrapper = new Div();
+			statusWrapper.addClassName("status-wrapper");
+			statusWrapper.add(statusWrappedContent);
+
+			add(new H2("Published"));
+			add(statusWrapper);
+		}
+
+		private PageVersion getPageVersion() {
+			return page.getPublicVersion();
+		}
+
+		private void onAbort() {
+			PageVersion version = getPageVersion();
+			PagePublication publication = version.getPublication();
+
+			publishingController.abortPublication(publication);
+
+			page = pagesRepo.getOne(page.getId());
+
+			bind(page);
+		}
+
+		private void onUnpublish() {
+			if (publishingController.isLocked(page)) {
+				new PageLockedDialog().open();
+			} else {
+				publishingController.unpublish(getPageVersion(), (updatedPage) -> {
+					page = updatedPage;
+
+					refresh();
+
+					new Thread(() -> {
+						eventPublisher.publishEvent(new PageVersionUndeployedEvent(getPageVersion()));
+					}).start();
+				});
+			}
+		}
+
+		private void onVisit() {
+			UI.getCurrent().getPage()
+					.executeJavaScript(String.format("window.open('https://%s', '_blank');", page.getSite().getUri()));
+		}
+
+		private void onMoreDetails() {
+			PageVersion version = getPageVersion();
+			PagePublication publication = version.getPublication();
+
+			applicationContext.getBean(MonitorPagePublicationDialog.class).bind(publication).open();
+		}
+
+		public void bind(Page page) {
+			if (page.getSite() != null) {
+				disconnectedStatus.setVisible(false);
+				undeployedStatus.setVisible(false);
+				pendingStatus.setVisible(false);
+				progressingStatus.setVisible(false);
+				completedStatus.setVisible(false);
+
+				PageVersion version = getPageVersion();
+				PagePublication publication = version.getPublication();
+
+				if (publication != null) {
+					if (publication.isPending()) {
+						pendingStatus.setVisible(true);
+					}
+
+					if (publication.isProgressing()) {
+						publishingController.getTask(publication.getId()).ifPresent(task -> {
+							progressPercentage
+									.setText(String.format("%d %%", (int) Math.floor(task.getProgress() * 100)));
+
+							progressingStatus.setVisible(true);
+						});
+					}
+
+					if (publication.isCompleted()) {
+						completedStatus.setVisible(true);
+					}
+				} else {
+					undeployedStatus.setVisible(true);
+				}
+			} else {
+				disconnectedStatus.setVisible(true);
+				undeployedStatus.setVisible(false);
+				pendingStatus.setVisible(false);
+				progressingStatus.setVisible(false);
+				completedStatus.setVisible(false);
 			}
 		}
 
@@ -471,7 +701,9 @@ public class ManagePageView extends VerticalLayout implements HasUrlParameter<St
 
 	private ManageDraftVersionComponent draftComponent;
 
-	private ManagePublicVersionComponent publicComponent;
+	private ManageCurrentVersionComponent publicComponent;
+
+	private ManagePublicVersionComponent remoteComponent;
 
 	@PostConstruct
 	private void postConstruct() {
@@ -485,14 +717,29 @@ public class ManagePageView extends VerticalLayout implements HasUrlParameter<St
 	private void bind(Page pageToBind) {
 		this.page = pageToBind;
 
+		removeAll();
+
 		draftComponent = new ManageDraftVersionComponent();
-		publicComponent = new ManagePublicVersionComponent();
+		draftComponent.addClassName("page-part");
+
+		publicComponent = new ManageCurrentVersionComponent();
+		publicComponent.addClassName("page-part");
+
+		remoteComponent = new ManagePublicVersionComponent();
+		remoteComponent.addClassName("page-part");
 
 		HorizontalLayout contentLayout = new HorizontalLayout();
 		contentLayout.setSpacing(true);
 		contentLayout.setWidthFull();
+
 		contentLayout.add(draftComponent);
+		contentLayout.expand(draftComponent);
+
 		contentLayout.add(publicComponent);
+		contentLayout.expand(publicComponent);
+
+		contentLayout.add(remoteComponent);
+		contentLayout.expand(remoteComponent);
 
 		pageTitle = new Anchor();
 		pageTitle.setText(page.getLabel());
@@ -509,11 +756,13 @@ public class ManagePageView extends VerticalLayout implements HasUrlParameter<St
 
 		draftComponent.bind(page);
 		publicComponent.bind(page);
+		remoteComponent.bind(page);
 	}
 
 	private void refresh() {
 		draftComponent.bind(page);
 		publicComponent.bind(page);
+		remoteComponent.bind(page);
 	}
 
 	@Override
@@ -529,9 +778,12 @@ public class ManagePageView extends VerticalLayout implements HasUrlParameter<St
 
 	@Subscribe
 	public void on(PagePublicationUpdated event) {
-		if (page.getPublication() != null && page.getPublication().getId().equals(event.getEntityID())) {
+		Page freshPage = pagesRepo.getOne(page.getId());
+
+		if (freshPage.getPublications().stream().filter(publication -> publication.getId().equals(event.getEntityID()))
+				.count() > 0) {
 			publicationsRepo.findById(event.getEntityID()).ifPresent(publication -> {
-				page.setPublication(publication);
+				page = freshPage;
 
 				getUI().ifPresent(ui -> {
 					ui.access(() -> {

@@ -7,6 +7,20 @@ package it.bz.opendatahub.webcomponentspagebuilder.data.entities;
  */
 public enum PagePublicationStatus {
 
-	PENDING, PROGRESSING, COMPLETED
+	PENDING("Pending"),
+
+	PROGRESSING("In Progress"),
+
+	COMPLETED("Completed");
+
+	private String label;
+
+	private PagePublicationStatus(String label) {
+		this.label = label;
+	}
+
+	public String getLabel() {
+		return label;
+	}
 
 }

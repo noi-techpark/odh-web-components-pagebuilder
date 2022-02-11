@@ -24,7 +24,7 @@ public class PagePublicationUpdated implements Serializable {
 		this.entityID = publication.getId();
 		this.action = publication.getAction();
 		this.status = publication.getStatus();
-		this.datetime = publication.getDeployedAt();
+		this.datetime = publication.getUpdatedAt();
 	}
 
 	public UUID getEntityID() {
@@ -41,6 +41,14 @@ public class PagePublicationUpdated implements Serializable {
 
 	public LocalDateTime getDatetime() {
 		return datetime;
+	}
+
+	public boolean isAbout(PagePublication publication) {
+		return publication.getId().equals(entityID);
+	}
+
+	public boolean isAbout(UUID id) {
+		return id.equals(entityID);
 	}
 
 }

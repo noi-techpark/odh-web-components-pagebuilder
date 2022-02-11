@@ -1,5 +1,7 @@
 package it.bz.opendatahub.webcomponentspagebuilder.rendering.screenshots;
 
+import java.util.concurrent.TimeUnit;
+
 import org.openqa.selenium.OutputType;
 import org.openqa.selenium.remote.RemoteWebDriver;
 
@@ -37,6 +39,8 @@ public abstract class WebDriverScreenshotRenderer implements ScreenshotRenderer 
 		RemoteWebDriver driver = createDriver();
 
 		driver.get(url);
+
+		driver.manage().timeouts().implicitlyWait(2, TimeUnit.SECONDS);
 
 		byte[] screenshot = driver.getScreenshotAs(OutputType.BYTES);
 
